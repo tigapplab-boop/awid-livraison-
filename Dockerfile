@@ -14,6 +14,7 @@ RUN npm install -g bun
 
 # Copy package files for dependency installation
 COPY package.json package-lock.json ./
+RUN bun add -d @types/socket.io
 RUN bun install
 
 # ---- Stage 2: Builder ----
