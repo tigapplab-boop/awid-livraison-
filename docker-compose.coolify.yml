@@ -1,0 +1,55 @@
+# ========================================
+# AWID / BURGER MINUTE - Docker Compose for Coolify
+# Coolify handles SSL/reverse proxy automatically
+# ========================================
+
+services:
+  # ---- Next.js Application ----
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: burger-minute-app
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://burger:burger_secret@db:5432/burger_minute
+      - UPLOAD_DIR=/app/upload
+      - JWT_SECRET=burger-minute-jwt-secret-change-me-2024
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/upload
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ---- PostgreSQL Database ----
+  db:
+    image: postgres:16-alpine
+    container_name: burger-minute-db
+    environment:
+      POSTGRES_DB: burger_minute
+      POSTGRES_USER: burger
+      POSTGRES_PASSWORD: burger_secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U burger -d burger_minute"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+# ---- Volumes ----
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local

@@ -1,0 +1,40 @@
+{
+  "name": "Burger Minute",
+  "short_name": "BurgerMin",
+  "description": "Commandez vos burgers préférés en ligne et faites-vous livrer rapidement",
+  "start_url": "/menu",
+  "display": "standalone",
+  "background_color": "#FFFBEB",
+  "theme_color": "#FFD700",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["food", "shopping"],
+  "lang": "fr",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}

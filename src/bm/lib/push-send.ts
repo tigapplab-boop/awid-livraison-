@@ -1,0 +1,155 @@
+// ========================================
+// AWID / BURGER MINUTE - Server-side Push Helper
+// Configures web-push with VAPID keys and provides
+// helper functions to send push notifications
+// ========================================
+
+import webpush from 'web-push'
+import { db } from '@/lib/db'
+
+// Configure web-push with VAPID credentials
+const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:contact@burgerminute.dz'
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || ''
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || ''
+
+if (vapidPublicKey && vapidPrivateKey) {
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
+} else {
+  console.warn(
+    '[Push] VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in .env'
+  )
+}
+
+export interface PushPayload {
+  title: string
+  body: string
+  icon?: string
+  badge?: string
+  image?: string
+  data?: Record<string, unknown>
+  actions?: Array<{ action: string; title: string; icon?: string }>
+  tag?: string
+  requireInteraction?: boolean
+}
+
+/**
+ * Send a push notification to a specific user (all their subscriptions).
+ * Automatically removes invalid/expired subscriptions from the database.
+ */
+export async function sendPushToUser(
+  userId: string,
+  payload: PushPayload
+): Promise<{ sent: number; failed: number }> {
+  const subscriptions = await db.pushSubscription.findMany({
+    where: { userId },
+  })
+
+  if (subscriptions.length === 0) {
+    return { sent: 0, failed: 0 }
+  }
+
+  let sent = 0
+  let failed = 0
+
+  const pushPayload = JSON.stringify(payload)
+
+  for (const sub of subscriptions) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        },
+        pushPayload
+      )
+      sent++
+    } catch (error: unknown) {
+      failed++
+
+      // If the subscription is invalid (410 Gone or 404 Not Found), remove it from DB
+      if (
+        error instanceof Error &&
+        'statusCode' in error &&
+        (error as webpush.WebPushError).statusCode === 410
+      ) {
+        await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {
+          // Silently ignore deletion errors
+        })
+      } else if (
+        error instanceof Error &&
+        'statusCode' in error &&
+        (error as webpush.WebPushError).statusCode === 404
+      ) {
+        await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {
+          // Silently ignore deletion errors
+        })
+      } else {
+        console.error(
+          `[Push] Failed to send notification to subscription ${sub.id}:`,
+          error instanceof Error ? error.message : error
+        )
+      }
+    }
+  }
+
+  return { sent, failed }
+}
+
+/**
+ * Send a push notification to all registered subscriptions.
+ * Automatically removes invalid/expired subscriptions from the database.
+ */
+export async function sendPushToAll(
+  payload: PushPayload
+): Promise<{ sent: number; failed: number }> {
+  const subscriptions = await db.pushSubscription.findMany()
+
+  if (subscriptions.length === 0) {
+    return { sent: 0, failed: 0 }
+  }
+
+  let sent = 0
+  let failed = 0
+
+  const pushPayload = JSON.stringify(payload)
+
+  for (const sub of subscriptions) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        },
+        pushPayload
+      )
+      sent++
+    } catch (error: unknown) {
+      failed++
+
+      // Remove invalid subscriptions
+      if (
+        error instanceof Error &&
+        'statusCode' in error &&
+        ((error as webpush.WebPushError).statusCode === 410 ||
+          (error as webpush.WebPushError).statusCode === 404)
+      ) {
+        await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {
+          // Silently ignore deletion errors
+        })
+      } else {
+        console.error(
+          `[Push] Failed to send notification to subscription ${sub.id}:`,
+          error instanceof Error ? error.message : error
+        )
+      }
+    }
+  }
+
+  return { sent, failed }
+}

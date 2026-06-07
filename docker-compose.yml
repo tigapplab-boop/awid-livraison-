@@ -1,0 +1,66 @@
+# ========================================
+# AWID / BURGER MINUTE - Docker Compose
+# Production deployment configuration
+# ========================================
+
+services:
+  # ---- Next.js Application ----
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: burger-minute-app
+    ports:
+      - "7000:3000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://burger:burger_secret@db:5432/burger_minute
+      - UPLOAD_DIR=/app/upload
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/upload
+    restart: unless-stopped
+    networks:
+      - burger-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/categories"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ---- PostgreSQL Database ----
+  db:
+    image: postgres:16-alpine
+    container_name: burger-minute-db
+    environment:
+      POSTGRES_DB: burger_minute
+      POSTGRES_USER: burger
+      POSTGRES_PASSWORD: burger_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U burger -d burger_minute"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - burger-network
+
+# ---- Volumes ----
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ---- Network ----
+networks:
+  burger-network:
+    driver: bridge

@@ -1,0 +1,53 @@
+{
+  "name": "burger-minute",
+  "version": "1.0.0",
+  "description": "BURGER MINUTE - Application de livraison",
+  "services": [
+    {
+      "name": "app",
+      "type": "docker-compose",
+      "dockerComposeFile": "docker-compose.yml",
+      "serviceName": "app",
+      "port": 7000,
+      "environment": {
+        "DATABASE_URL": "postgresql://burger:burger_secret@db:5432/burger_minute",
+        "UPLOAD_DIR": "/app/upload",
+        "JWT_SECRET": "change-this-to-a-secure-random-string",
+        "NODE_ENV": "production"
+      },
+      "dependsOn": ["db"]
+    },
+    {
+      "name": "db",
+      "type": "docker-compose",
+      "dockerComposeFile": "docker-compose.yml",
+      "serviceName": "db",
+      "environment": {
+        "POSTGRES_DB": "burger_minute",
+        "POSTGRES_USER": "burger",
+        "POSTGRES_PASSWORD": "burger_secret"
+      }
+    }
+  ],
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  },
+  "volumes": [
+    {
+      "name": "postgres_data",
+      "mountPath": "/var/lib/postgresql/data"
+    },
+    {
+      "name": "uploads_data",
+      "mountPath": "/app/upload"
+    }
+  ],
+  "healthcheck": {
+    "path": "/api/categories",
+    "port": 7000,
+    "interval": 30,
+    "timeout": 10,
+    "retries": 3
+  }
+}

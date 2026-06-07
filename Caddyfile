@@ -1,0 +1,47 @@
+# ========================================
+# AWID / BURGER MINUTE - Caddy Reverse Proxy
+# Automatic HTTPS via Let's Encrypt / ZeroSSL
+# Domain: burgerminute.space-z.ai
+# ========================================
+
+burgerminute.space-z.ai {
+        reverse_proxy app:3000 {
+                header_up Host {host}
+                header_up X-Forwarded-For {remote_host}
+                header_up X-Forwarded-Proto {scheme}
+                header_up X-Real-IP {remote_host}
+        }
+
+        # WebSocket support for Socket.IO
+        handle /socket.io/* {
+                reverse_proxy socket-service:3003 {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
+
+        # Security headers
+        header {
+                X-Content-Type-Options nosniff
+                X-Frame-Options DENY
+                Referrer-Policy strict-origin-when-cross-origin
+        }
+
+        # Static assets caching
+        handle /uploads/* {
+                reverse_proxy app:3000
+                header Cache-Control "public, max-age=31536000, immutable"
+        }
+
+        log {
+                output stdout
+                format console
+        }
+}
+
+# HTTP to HTTPS redirect
+http://burgerminute.space-z.ai {
+        redir https://burgerminute.space-z.ai{uri} permanent
+}

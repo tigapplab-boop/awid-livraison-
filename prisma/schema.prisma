@@ -1,0 +1,222 @@
+// ========================================
+// AWID / BURGER MINUTE - Prisma Schema
+// Adapted for SQLite (production will use PostgreSQL)
+// ========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== UTILISATEURS (Livreurs + Admins) ====================
+model User {
+  id          String   @id @default(uuid())
+  phone       String?  @unique
+  name        String
+  role        String   @default("LIVREUR") // LIVREUR | ADMIN
+  password    String   // bcrypt hash
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ordersCreated  Order[] @relation("AdminCreatedOrders")
+  ordersAssigned Order[] @relation("LivreurOrders")
+  pushSubscriptions PushSubscription[]
+
+  @@map("users")
+}
+
+// ==================== CLIENTS (créés après validation livreur) ====================
+model Client {
+  id           String          @id @default(uuid())
+  phone        String          @unique
+  name         String?
+  firstOrderAt DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  tokens    ClientToken[]
+  addresses ClientAddress[]
+  orders    Order[]
+
+  @@map("clients")
+}
+
+model ClientToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  lastUsed  DateTime @updatedAt
+
+  @@map("client_tokens")
+}
+
+model ClientAddress {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  label     String?  // "Maison", "Bureau"
+  address   String
+  zone      String   // VILLE | HORS_VILLE
+  location  String?  // JSON string: { lat, lng }
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("client_addresses")
+}
+
+// ==================== CATÉGORIES & PRODUITS ====================
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  nameAr    String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  nameAr      String?
+  description String?
+  price       Int       // Centimes (ex: 45000 = 450 DA)
+  image       String?   // URL relative
+  isAvailable Boolean   @default(true)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+// ==================== COMMANDES DÉFINITIVES ====================
+model Order {
+  id          String  @id @default(uuid())
+  orderNumber String  @unique // BM-YYMMDD-XXX
+  type        String  @default("ONLINE") // ONLINE | POS
+  source      String  @default("ONLINE") // ONLINE | PHONE_CALL
+  status      String  @default("PENDING") // PENDING | CONFIRMED | PREPARING | READY | DELIVERED | CANCELLED
+
+  // Client (obligatoire après validation)
+  clientId    String
+  client      Client  @relation(fields: [clientId], references: [id])
+  clientPhone String  // Redondant pour recherche rapide
+  clientToken String? // Token anonyme du navigateur
+
+  // Livreur
+  assignedLivreurId String?
+  assignedLivreur   User?   @relation("LivreurOrders", fields: [assignedLivreurId], references: [id])
+  createdByAdminId  String?
+  createdByAdmin    User?   @relation("AdminCreatedOrders", fields: [createdByAdminId], references: [id])
+  assignedAt        DateTime?
+
+  // Livraison
+  clientAddress   String
+  deliveryZone    String  // VILLE | HORS_VILLE
+  deliveryFee     Int     // Centimes
+  isNightDelivery Boolean @default(false)
+
+  // Finance
+  subtotal Int
+  total    Int
+
+  // Cash livreur
+  amountPaid       Int?    // Ce que le client a réellement donné
+  changeDue        Int?    // Auto-calculé : amountPaid - total
+  paymentIssue     String? @default("NONE") // NONE | CLIENT_SHORT_MONEY | CLIENT_NO_CHANGE | CLIENT_REFUSES_PAY | WRONG_ADDRESS | CLIENT_NOT_HOME | OTHER
+  paymentIssueNote String?
+
+  // Relations
+  items OrderItem[]
+
+  // Timestamps workflow
+  createdAt     DateTime   @default(now())
+  confirmedAt   DateTime?
+  preparedAt    DateTime?
+  readyAt       DateTime?
+  pickedUpAt    DateTime?
+  deliveredAt   DateTime?
+  cancelledAt   DateTime?
+  cancelReason  String?
+
+  notes         String?
+  paymentMethod String      @default("CASH") // CASH only
+  paymentStatus String      @default("PENDING") // PENDING | PAID | PARTIAL | REFUNDED | OFFERED
+
+  // Traçabilité
+  sourceTempId  String? // ID Redis de l'OrderTemp d'origine
+  sourceVersion Int?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Int    // Prix au moment de la commande (centimes)
+  notes     String?
+
+  @@map("order_items")
+}
+
+// ==================== ZONES LIVRAISON ====================
+model DeliveryZone {
+  id         String   @id @default(uuid())
+  name       String   // "Ville", "Hors Ville"
+  dayFee     Int      // Centimes
+  nightFee   Int      // Centimes
+  startNight String   // "19:00"
+  endNight   String   // "23:59"
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@map("delivery_zones")
+}
+
+// ==================== SUBSCRIPTIONS PUSH (Web Push VAPID) ====================
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("push_subscriptions")
+}
+
+// ==================== STATS JOURNALIÈRES ====================
+model DailyStats {
+  id                String   @id @default(uuid())
+  date              DateTime @unique
+  totalOrders       Int      @default(0)
+  onlineOrders      Int      @default(0)
+  posOrders         Int      @default(0)
+  phoneOrders       Int      @default(0)
+  totalRevenue      Int      @default(0)
+  totalDeliveryFees Int      @default(0)
+  cancelledOrders   Int      @default(0)
+  partialPayments   Int      @default(0)
+  offeredOrders     Int      @default(0)
+  topProductId      String?
+
+  @@map("daily_stats")
+}
