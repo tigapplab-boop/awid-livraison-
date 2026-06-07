@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Copy package files for dependency installation
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev
+RUN npm install
 
 # ---- Stage 2: Builder ----
 FROM node:20-alpine AS builder
@@ -27,6 +27,7 @@ RUN npx prisma generate
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Build Next.js
 RUN npm run build
