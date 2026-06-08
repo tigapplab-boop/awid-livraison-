@@ -32,6 +32,8 @@ COPY . .
 RUN npx prisma generate
 
 # Set environment variables for build
+ARG JWT_SECRET
+ENV JWT_SECRET=${JWT_SECRET}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=4096"

@@ -9,6 +9,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
     ports:
       - "7000:3000"
