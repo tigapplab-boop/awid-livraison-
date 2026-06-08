@@ -1,22 +1,4 @@
 services:
-  nginx:
-    image: nginx:alpine
-    container_name: burger-minute-nginx
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.burgerminute.rule=Host(`burgerminute.giize.com`)"
-      - "traefik.http.routers.burgerminute.entrypoints=web"
-      - "traefik.http.services.burgerminute.loadbalancer.server.port=80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    depends_on:
-      - app
-    restart: unless-stopped
-    networks:
-      - burger-network
-      - coolify
-
   app:
     build:
       context: .
@@ -25,8 +7,8 @@ services:
         - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
     user: root
-    expose:
-      - '3000'
+    ports:
+      - '7000:3000'  # ← REMIS
     env_file:
       - .env
     environment:
@@ -117,6 +99,3 @@ volumes:
 networks:
   burger-network:
     driver: bridge
-  coolify:
-    external: true
-    name: wcw4ssgk0s4ssc88c480oocc
