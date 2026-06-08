@@ -91,6 +91,7 @@ model Product {
   name        String
   nameAr      String?
   description String?
+  descriptionAr String?
   price       Int       // Centimes (ex: 45000 = 450 DA)
   image       String?   // URL relative
   isAvailable Boolean   @default(true)

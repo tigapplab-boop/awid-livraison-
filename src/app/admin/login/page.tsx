@@ -9,6 +9,8 @@ import { useEffect } from 'react'
 
 export default function AdminLoginPage() {
   useEffect(() => {
+    localStorage.removeItem('bm_token')
+    localStorage.removeItem('bm_user')
     window.location.href = '/login'
   }, [])
 

@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' && request.headers.get('x-forwarded-proto') === 'https',
       sameSite: 'lax', // relax a bit for PWA navigation
       maxAge: 7 * 24 * 60 * 60,
       path: '/',

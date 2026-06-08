@@ -6,150 +6,16 @@ import { useSearchParams } from 'next/navigation';
 import { getProducts } from '@/bm/lib/api';
 import { useCart, isSupplement, registerSupplementCategoryIds } from '@/bm/lib/cart';
 import type { CategoryWithProducts, Product } from '@/bm/types';
-import { formatPrice } from '@/bm/lib/format';
 import SupplementPicker from '@/components/SupplementPicker';
 
-// Category icons mapping
-const CATEGORY_ICONS: Record<string, string> = {
-  'Nos Burgers': '🍔',
-  'Suppléments': '➕',
-  'Frites': '🍟',
-  'Nos Boissons': '🥤',
-};
+import { ProductCard } from '@/components/menu/ProductCard';
+import { CategoryTabs } from '@/components/menu/CategoryTabs';
+import { PromoBanner } from '@/components/menu/PromoBanner';
+import { useLocale } from '@/lib/locale';
+import { t } from '@/lib/i18n';
 
 // Category names that are considered "supplement" categories
 const SUPPLEMENT_CATEGORY_NAMES = ['Suppléments', 'Supplements', 'suppléments', 'supplements'];
-
-function ProductCard({
-  product,
-  categoryName,
-  onAddSupplement,
-}: {
-  product: Product;
-  categoryName: string;
-  onAddSupplement: (product: Product) => void;
-}) {
-  const { addItem, removeItem, updateQuantity, items } = useCart();
-
-  // Find all cart items for this product
-  const cartItemsForProduct = items.filter((i) => i.product.id === product.id);
-  const totalQuantity = cartItemsForProduct.reduce((sum, i) => sum + i.quantity, 0);
-  const primaryCartItem = cartItemsForProduct.find((i) => !i.attachedToProductId) || cartItemsForProduct[0];
-
-  const handleAdd = () => {
-    if (isSupplement(product)) {
-      onAddSupplement(product);
-    } else {
-      addItem(product);
-    }
-  };
-
-  const handleDecrease = () => {
-    if (!primaryCartItem) return;
-    if (primaryCartItem.quantity <= 1) {
-      removeItem(product.id);
-    } else {
-      updateQuantity(product.id, primaryCartItem.quantity - 1);
-    }
-  };
-
-  const handleIncrease = () => {
-    addItem(product);
-  };
-
-  return (
-    <div className="menu-product-card">
-      {/* Image Section - Full width proportional display */}
-      <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-bm-primary-50 to-bm-primary-100 overflow-hidden">
-        {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-contain"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full">
-            <span className="text-6xl sm:text-7xl opacity-80">
-              {CATEGORY_ICONS[categoryName] || '🍽️'}
-            </span>
-          </div>
-        )}
-        {totalQuantity > 0 && (
-          <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-bm-secondary text-[11px] font-bold text-white shadow-md">
-            {totalQuantity}
-          </span>
-        )}
-        {isSupplement(product) && (
-          <span className="absolute top-2 left-2 shrink-0 rounded-full bg-bm-accent-500 px-2.5 py-0.5 text-[10px] font-semibold text-white uppercase tracking-wide shadow-sm">
-            Suppl.
-          </span>
-        )}
-      </div>
-
-      {/* Info Section */}
-      <div className="p-3 sm:p-4">
-        <div className="mb-2">
-          <h3 className="text-base font-bold text-stone-800 leading-tight mb-1">
-            {product.name}
-          </h3>
-          {product.description && (
-            <p className="text-sm text-stone-500 leading-snug line-clamp-2">
-              {product.description}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-lg font-extrabold text-bm-primary-700">
-            {formatPrice(product.price)}
-          </span>
-
-          {totalQuantity > 0 ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDecrease}
-                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-bm-primary text-bm-primary-700 transition-colors active:bg-bm-primary-50"
-                aria-label="Diminuer"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  {primaryCartItem && primaryCartItem.quantity <= 1 ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
-                  )}
-                </svg>
-              </button>
-              <span className="w-8 text-center text-sm font-bold text-stone-800">
-                {totalQuantity}
-              </span>
-              <button
-                onClick={handleIncrease}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-bm-primary text-bm-primary-700 shadow-sm transition-transform active:scale-90"
-                aria-label="Augmenter"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleAdd}
-              className="flex h-10 items-center gap-1.5 rounded-full bg-bm-primary px-5 text-sm font-bold text-bm-primary-700 shadow-sm transition-transform active:scale-90"
-              aria-label={`Ajouter ${product.name}`}
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Ajouter
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MenuSkeleton() {
   return (
@@ -157,16 +23,16 @@ function MenuSkeleton() {
       {Array.from({ length: 3 }).map((_, catIdx) => (
         <div key={catIdx}>
           <div className="skeleton-bm mb-4 h-8 w-48 rounded-lg" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-xl bg-white overflow-hidden">
+              <div key={i} className="rounded-2xl bg-white overflow-hidden shadow-sm">
                 <div className="skeleton-bm aspect-[4/3] w-full" />
                 <div className="p-3">
                   <div className="skeleton-bm mb-2 h-4 w-3/4 rounded" />
                   <div className="skeleton-bm mb-3 h-3 w-1/2 rounded" />
-                  <div className="flex justify-between">
-                    <div className="skeleton-bm h-6 w-16 rounded" />
-                    <div className="skeleton-bm h-9 w-24 rounded-full" />
+                  <div className="flex justify-between mt-auto">
+                    <div className="skeleton-bm h-5 w-16 rounded" />
+                    <div className="skeleton-bm h-9 w-9 rounded-full" />
                   </div>
                 </div>
               </div>
@@ -198,7 +64,11 @@ function MenuContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [orderBannerInfo, setOrderBannerInfo] = useState<{ orderId: string; orderNumber: string } | null>(null);
   const [showOrderBanner, setShowOrderBanner] = useState(false);
-  const { totalItems, addItem, items } = useCart();
+  const [animatingProduct, setAnimatingProduct] = useState<string | null>(null);
+  const [showCartBar, setShowCartBar] = useState(false);
+  
+  const { totalItems, addItem, items, subtotal } = useCart();
+  const { locale, isRTL, isMounted } = useLocale();
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const isScrollingRef = useRef(false);
@@ -275,6 +145,11 @@ function MenuContent() {
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
+  // Show/Hide cart bar
+  useEffect(() => {
+    setShowCartBar(totalItems > 0);
+  }, [totalItems]);
+
   // Validate existing order on mount
   useEffect(() => {
     async function validateOrder() {
@@ -310,10 +185,30 @@ function MenuContent() {
     }, 800);
   };
 
+  const handleAddProduct = (productId: string) => {
+    const product = categories.flatMap(c => c.products).find(p => p.id === productId);
+    if (!product) return;
+
+    // Haptic feedback
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+
+    // Animation
+    setAnimatingProduct(productId);
+    setTimeout(() => setAnimatingProduct(null), 300);
+
+    if (isSupplement(product)) {
+      handleAddSupplement(product);
+    } else {
+      addItem(product);
+    }
+  };
+
   const handleAddSupplement = (product: Product) => {
     const burgersInCart = items.filter((item) => !item.attachedToProductId);
     if (burgersInCart.length === 0) {
-      setToastMessage('Ajoutez d\'abord un burger avant de choisir un supplément');
+      setToastMessage(isRTL ? 'أضف برجر أولاً قبل اختيار الإضافة' : 'Ajoutez d\'abord un burger avant de choisir un supplément');
       return;
     }
     if (burgersInCart.length === 1) {
@@ -338,44 +233,48 @@ function MenuContent() {
     setPendingSupplement(null);
   };
 
+  const getProductQuantity = (productId: string) => {
+    return items.filter(i => i.product.id === productId).reduce((sum, i) => sum + i.quantity, 0);
+  };
+
+  if (!isMounted) return null;
+
   return (
-    <div className="flex min-h-screen flex-col bg-bm-bg">
-      {/* Header - Yellow background with dark text */}
-      <header className="sticky top-0 z-40 bg-bm-primary px-4 pb-3 pt-3 shadow-sm">
-        <div className="flex items-center justify-between py-2">
+    <div className="flex flex-col pb-24">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-bm-bg px-4 pb-2 pt-3">
+        <div className="flex items-center gap-3 py-1">
+          <div className="w-9 h-9 bg-bm-primary rounded-xl flex items-center justify-center shadow-sm">
+            <span className="text-stone-900 font-extrabold text-xs">BM</span>
+          </div>
           <div>
-            <h1 className="text-xl font-extrabold text-stone-900 tracking-tight">
-              🍔 Burger Minute
+            <h1 className="text-lg font-bold text-stone-900 leading-none">
+              Burger Minute
             </h1>
-            <p className="text-xs text-stone-700 font-medium">Commandez en ligne</p>
+            <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+              {t('menu.title', locale)}
+            </p>
           </div>
         </div>
       </header>
 
       {/* Category Quick Nav */}
       {!loading && categories.length > 0 && (
-        <div className="sticky top-[72px] z-30 bg-bm-bg/95 backdrop-blur-sm border-b border-stone-100">
-          <div className="category-tabs">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => scrollToSection(category.id)}
-                className={`category-tab ${
-                  activeSection === category.id
-                    ? 'category-tab-active'
-                    : 'category-tab-inactive'
-                }`}
-              >
-                <span className="mr-1">{CATEGORY_ICONS[category.name] || '🍽️'}</span>
-                {category.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <CategoryTabs 
+          categories={categories}
+          activeCategory={activeSection || categories[0]?.id}
+          onSelect={scrollToSection}
+          locale={locale}
+        />
+      )}
+
+      {/* Promo Banner */}
+      {!loading && categories.length > 0 && (
+        <PromoBanner locale={locale} />
       )}
 
       {/* Content - All Categories */}
-      <div className="flex-1 pb-24">
+      <div className="flex-1">
         {loading ? (
           <MenuSkeleton />
         ) : error ? (
@@ -418,7 +317,7 @@ function MenuContent() {
             <p className="mt-1 text-sm text-stone-500">Revenez plus tard</p>
           </div>
         ) : (
-          <div className="px-3 sm:px-4 py-4 space-y-8">
+          <div className="px-3 sm:px-4 py-2 space-y-6">
             {categories.map((category) => (
               <section
                 key={category.id}
@@ -426,24 +325,25 @@ function MenuContent() {
                 id={`section-${category.id}`}
               >
                 {/* Section Header */}
-                <div className="category-section-header mb-3 flex items-center gap-2">
-                  <span className="text-xl">{CATEGORY_ICONS[category.name] || '🍽️'}</span>
-                  <h2 className="text-lg font-extrabold text-stone-800 tracking-tight">
-                    {category.name}
+                <div className="mb-3 flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-stone-800 tracking-tight">
+                    {isRTL ? category.nameAr || category.name : category.name}
                   </h2>
-                  <span className="text-xs font-medium text-stone-400">
-                    {category.products.length} article{category.products.length > 1 ? 's' : ''}
+                  <span className="text-xs font-medium text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">
+                    {category.products.length}
                   </span>
                 </div>
 
-                {/* Products Grid - 2 columns on mobile, 3 on tablet, 4 on desktop */}
+                {/* Products Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {category.products.map((product) => (
                     <ProductCard
                       key={product.id}
-                      product={product}
-                      categoryName={category.name}
-                      onAddSupplement={handleAddSupplement}
+                      product={product as any}
+                      onAdd={handleAddProduct}
+                      quantityInCart={getProductQuantity(product.id)}
+                      locale={locale}
+                      animatingProduct={animatingProduct}
                     />
                   ))}
                   {category.products.length === 0 && (
@@ -458,30 +358,61 @@ function MenuContent() {
         )}
       </div>
 
+      {/* Floating Cart Bar */}
+      <div className={`
+        fixed bottom-0 left-0 right-0 p-4 z-50
+        transition-transform duration-300 ease-out safe-area-bottom
+        ${showCartBar ? 'translate-y-0' : 'translate-y-[150%]'}
+      `}>
+        <div className={`bg-[#1A1A1A] text-white rounded-2xl p-4 flex items-center justify-between shadow-2xl ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className="relative">
+              <span className="text-2xl drop-shadow-md">🛒</span>
+              {totalItems > 0 && (
+                <span className={`absolute -top-1 ${isRTL ? '-left-1' : '-right-1'} bg-bm-primary text-stone-900 text-[10px] w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold shadow-sm`}>
+                  {totalItems}
+                </span>
+              )}
+            </div>
+            <div className={isRTL ? 'text-right' : 'text-left'}>
+              <p className="text-xs font-medium text-stone-400">
+                {totalItems} {t('menu.items', locale)}
+              </p>
+              <p className="text-base font-bold text-white">
+                {(subtotal / 100).toLocaleString()} <span className="text-[10px] text-stone-400">DA</span>
+              </p>
+            </div>
+          </div>
+          <Link href="/cart" className="bg-bm-primary text-stone-900 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#FF8A00] active:scale-95 transition-all shadow-sm">
+            {t('menu.viewCart', locale)}
+          </Link>
+        </div>
+      </div>
+
       {/* Order Confirmed Banner */}
       {showOrderBanner && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-green-500 text-white shadow-lg animate-in slide-in-from-top-4">
-          <div className="mx-auto max-w-lg px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-[#00C853] text-white shadow-lg animate-in slide-in-from-top-4 safe-area-top">
+          <div className={`mx-auto max-w-lg px-4 py-3 flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               </div>
-              <div>
-                <p className="text-sm font-bold">Commande acceptée !</p>
+              <div className={isRTL ? 'text-right' : 'text-left'}>
+                <p className="text-sm font-bold">{isRTL ? 'تم تأكيد الطلب!' : 'Commande acceptée !'}</p>
                 {orderBannerInfo?.orderNumber && (
-                  <p className="text-xs text-white/80">N° {orderBannerInfo.orderNumber}</p>
+                  <p className="text-[11px] text-white/90 font-medium">N° {orderBannerInfo.orderNumber}</p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               {orderBannerInfo?.orderId && (
                 <Link
                   href={`/order/${orderBannerInfo.orderId}`}
                   className="text-xs font-semibold bg-white/20 px-3 py-1.5 rounded-full hover:bg-white/30 transition-colors"
                 >
-                  Suivre →
+                  {isRTL ? '← تتبع' : 'Suivre →'}
                 </Link>
               )}
               <button
@@ -499,9 +430,9 @@ function MenuContent() {
 
       {/* Toast notification */}
       {toastMessage && (
-        <div className="fixed left-4 right-4 top-20 z-50 animate-in slide-in-from-top-2 rounded-xl bg-stone-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
-          <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 shrink-0 text-bm-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="fixed left-4 right-4 top-16 z-50 animate-in slide-in-from-top-2 rounded-xl bg-[#1A1A1A] px-4 py-3 text-sm font-medium text-white shadow-xl">
+          <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <svg className="h-5 w-5 shrink-0 text-bm-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
             </svg>
             {toastMessage}
@@ -509,42 +440,17 @@ function MenuContent() {
         </div>
       )}
 
-      {/* Floating Cart Button */}
-      {totalItems > 0 && (
-        <Link href="/cart" className="cart-fab" aria-label={`Panier: ${totalItems} article${totalItems > 1 ? 's' : ''}`}>
-          <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
-            />
-          </svg>
-          <span className="cart-fab-badge">{totalItems}</span>
-        </Link>
-      )}
-
       {/* Footer link */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-stone-200 bg-white/90 backdrop-blur-sm safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-stone-100 bg-[#F8F5F0]/90 backdrop-blur-md safe-area-bottom z-40">
         <div className="mx-auto max-w-lg px-4 py-2 text-center">
           <Link
             href="/login"
-            className="text-xs text-stone-400 transition-colors hover:text-bm-primary-700"
+            className="text-[10px] font-medium text-stone-400 hover:text-stone-600 transition-colors uppercase tracking-wider"
           >
-            Espace Livreur / Admin →
+            Espace Livreur / Admin
           </Link>
         </div>
       </div>
-
-      {/* Active order indicator */}
-      {!showOrderBanner && orderBannerInfo?.orderId && (
-        <Link
-          href={`/order/${orderBannerInfo.orderId}`}
-          className="fixed top-2 right-2 z-30 flex items-center gap-1.5 bg-green-500 text-white rounded-full px-3 py-1.5 text-xs font-semibold shadow-lg hover:bg-green-600 transition-colors"
-        >
-          <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-          Commande en cours
-        </Link>
-      )}
 
       {/* Supplement Picker */}
       <SupplementPicker

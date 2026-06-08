@@ -9,7 +9,10 @@ import { useEffect } from 'react'
 
 export default function LivreurLoginPage() {
   useEffect(() => {
-    // Use window.location for a hard redirect that always works
+    // Si on arrive ici, c'est que le middleware a bloqué l'accès (pas de cookie)
+    // On nettoie le localStorage pour casser la boucle infinie de redirection
+    localStorage.removeItem('bm_token')
+    localStorage.removeItem('bm_user')
     window.location.href = '/login'
   }, [])
 

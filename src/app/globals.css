@@ -398,3 +398,55 @@
   background: #d6d3d1;
   border-radius: 2px;
 }
+
+/* ========================================
+   Menu Client Specific Styles
+   ======================================== */
+
+/* Animation d'ajout au panier */
+@keyframes addToCart {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+
+.add-to-cart-animate {
+  animation: addToCart 0.2s ease-out;
+}
+
+/* Scrollbar catégories cachée mais fonctionnelle */
+.categories-scroll::-webkit-scrollbar {
+  display: none;
+}
+.categories-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* RTL Support */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Empêcher le zoom sur double-tap iOS */
+button, a {
+  touch-action: manipulation;
+}
+
+/* Empêcher le highlight bleu sur mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Respecter les safe areas */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

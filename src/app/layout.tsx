@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Poppins, Cairo } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/bm/lib/cart";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
@@ -8,6 +8,18 @@ const inter = Inter({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  weight: ["700"],
+  subsets: ["latin"],
+});
+
+const cairo = Cairo({
+  variable: "--font-cairo",
+  weight: ["400", "600", "700"],
+  subsets: ["arabic", "latin"],
 });
 
 export const metadata: Metadata = {
@@ -46,7 +58,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icon-512.png" />
       </head>
-      <body className={`${inter.variable} antialiased bg-bm-bg text-stone-900 font-sans`}>
+      <body className={`${inter.variable} ${poppins.variable} ${cairo.variable} antialiased bg-bm-bg text-stone-900 font-sans`}>
         <CartProvider>
           <main className="min-h-screen">{children}</main>
         </CartProvider>
