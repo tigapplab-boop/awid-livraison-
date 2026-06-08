@@ -103,8 +103,7 @@ p.user.count().then(c => { console.log(c); p.\$disconnect(); }).catch(() => { co
 
 if [ "$USER_COUNT" = "0" ]; then
   echo "[Entrypoint] No users found, seeding database..."
-  npx tsx prisma/seed.ts 2>/dev/null || \
-    node -e "import('./prisma/seed.ts').catch(() => {})" 2>/dev/null || \
+  npx --yes tsx prisma/seed.ts || \
     echo "[Entrypoint] Warning: Seed failed, you may need to seed manually"
 else
   echo "[Entrypoint] Database has $USER_COUNT users, skipping seed."
