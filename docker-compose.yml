@@ -3,10 +3,10 @@ services:
     image: nginx:alpine
     container_name: burger-minute-nginx
     labels:
-      - "caddy_0.encode=zstd gzip"
-      - "caddy_0.handle_path=burgerminute.giize.com*"
-      - "caddy_0.handle_path.0_reverse_proxy={{upstreams 80}}"
-      - "caddy_0.header=-Server"
+      - "traefik.enable=true"
+      - "traefik.http.routers.burgerminute.rule=Host(`burgerminute.giize.com`)"
+      - "traefik.http.routers.burgerminute.entrypoints=web"
+      - "traefik.http.services.burgerminute.loadbalancer.server.port=80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
     networks:
       - burger-network
+      - coolify
 
   app:
     build:
@@ -42,7 +43,7 @@ services:
     networks:
       - burger-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]  # ← CHANGÉ : / au lieu de /healthz
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 1m
       timeout: 10s
       retries: 3
@@ -116,3 +117,6 @@ volumes:
 networks:
   burger-network:
     driver: bridge
+  coolify:
+    external: true
+    name: wcw4ssgk0s4ssc88c480oocc
