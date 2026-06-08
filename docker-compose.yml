@@ -12,6 +12,7 @@ services:
       args:
         - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
+    user: root
     expose:
       - '3000'
     env_file:
