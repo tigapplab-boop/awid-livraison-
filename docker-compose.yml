@@ -1,10 +1,4 @@
-# ========================================
-# AWID / BURGER MINUTE - Docker Compose
-# Production deployment configuration
-# ========================================
-
 services:
-  # ---- Next.js Application ----
   app:
     build:
       context: .
@@ -37,7 +31,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # ---- Socket.IO Service ----
   socket-service:
     build:
       context: ./mini-services/socket-service
@@ -61,7 +54,6 @@ services:
       timeout: 5s
       retries: 3
 
-  # ---- Redis ----
   redis:
     image: redis:7-alpine
     container_name: burger-minute-redis
@@ -79,7 +71,6 @@ services:
     networks:
       - burger-network
 
-  # ---- PostgreSQL Database ----
   db:
     image: postgres:16-alpine
     container_name: burger-minute-db
@@ -100,16 +91,11 @@ services:
     networks:
       - burger-network
 
-# ---- Volumes ----
 volumes:
   postgres_data:
-    driver: local
   uploads_data:
-    driver: local
   redis_data:
-    driver: local
 
-# ---- Network ----
 networks:
   burger-network:
     driver: bridge
