@@ -3,17 +3,12 @@ services:
     image: nginx:alpine
     container_name: burger-minute-nginx
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.burgerminute.rule=Host(`burgerminute.giize.com`)"
-      - "traefik.http.routers.burgerminute.entrypoints=websecure"
-      - "traefik.http.routers.burgerminute.tls.certresolver=letsencrypt"
-      - "traefik.http.services.burgerminute.loadbalancer.server.port=80"
-      - "traefik.http.routers.burgerminute-http.rule=Host(`burgerminute.giize.com`)"
-      - "traefik.http.routers.burgerminute-http.entrypoints=web"
-      - "traefik.http.middlewares.burgerminute-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.burgerminute-http.middlewares=burgerminute-redirect"
+      - "caddy_0.encode=zstd gzip"
+      - "caddy_0.handle_path=burgerminute.giize.com*"
+      - "caddy_0.handle_path.0_reverse_proxy={{upstreams 80}}"
+      - "caddy_0.header=-Server"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro  # ← CHEMIN CORRIGÉ
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - app
