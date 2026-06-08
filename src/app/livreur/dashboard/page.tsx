@@ -188,8 +188,8 @@ export default function LivreurDashboard() {
   useEffect(() => {
     if (user) {
       fetchData(true)
-      // Auto-refresh every 15 seconds
-      const interval = setInterval(() => fetchData(false), 15000)
+      // Auto-refresh every 30 seconds (reduced from 15s to minimize database load)
+      const interval = setInterval(() => fetchData(false), 30000)
       return () => clearInterval(interval)
     }
   }, [user, fetchData])

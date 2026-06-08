@@ -44,9 +44,45 @@ export async function GET(request: NextRequest) {
 
     const orders = await db.order.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        orderNumber: true,
+        type: true,
+        source: true,
+        status: true,
+        clientId: true,
+        clientPhone: true,
+        clientToken: true,
+        assignedLivreurId: true,
+        createdByAdminId: true,
+        assignedAt: true,
+        clientAddress: true,
+        deliveryZone: true,
+        deliveryFee: true,
+        isNightDelivery: true,
+        subtotal: true,
+        total: true,
+        amountPaid: true,
+        changeDue: true,
+        paymentIssue: true,
+        paymentIssueNote: true,
+        createdAt: true,
+        confirmedAt: true,
+        preparedAt: true,
+        readyAt: true,
+        pickedUpAt: true,
+        deliveredAt: true,
+        cancelledAt: true,
+        cancelReason: true,
+        notes: true,
+        paymentMethod: true,
+        paymentStatus: true,
         items: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            price: true,
+            notes: true,
             product: {
               select: {
                 id: true,
@@ -59,7 +95,12 @@ export async function GET(request: NextRequest) {
           },
         },
         assignedLivreur: {
-          select: { id: true, name: true, phone: true, isAvailable: true },
+          select: { 
+            id: true, 
+            name: true, 
+            phone: true, 
+            isAvailable: true 
+          },
         },
       },
       orderBy: { createdAt: 'desc' },

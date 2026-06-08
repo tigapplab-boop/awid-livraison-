@@ -162,6 +162,10 @@ model Order {
   sourceTempId  String? // ID Redis de l'OrderTemp d'origine
   sourceVersion Int?
 
+  @@index([status])
+  @@index([assignedLivreurId])
+  @@index([status, assignedLivreurId])
+  @@index([createdAt])
   @@map("orders")
 }
 
