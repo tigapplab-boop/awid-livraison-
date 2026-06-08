@@ -6,58 +6,59 @@
 // Only LIVREUR role can access livreur pages
 // ========================================
 
-import { useEffect, useRef, type ReactNode } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState, type ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { getStoredToken, getStoredUser } from '@/bm/lib/livreur-api'
 
 export default function LivreurLayout({ children }: { children: ReactNode }) {
-  const router = useRouter()
   const pathname = usePathname()
-  const redirected = useRef(false)
+  const [authChecked, setAuthChecked] = useState(false)
+  const [authorized, setAuthorized] = useState(false)
 
   useEffect(() => {
-    if (redirected.current) return
     const token = getStoredToken()
     const user = getStoredUser()
     const isLoginPage = pathname === '/livreur/login'
 
+    // Login page always redirects to /login via its own logic
+    if (isLoginPage) {
+      return
+    }
+
     if (!token || !user) {
-      // Not authenticated → go to unified login
-      redirected.current = true
-      router.replace('/login')
+      // Not authenticated → hard redirect to login
+      window.location.href = '/login'
       return
     }
 
     // Role check: only LIVREUR can access livreur pages
     if (user.role === 'ADMIN') {
-      redirected.current = true
-      router.replace('/admin/dashboard')
+      window.location.href = '/admin/dashboard'
       return
     }
 
     if (user.role !== 'LIVREUR') {
-      redirected.current = true
-      router.replace('/login')
+      window.location.href = '/login'
       return
     }
 
-    if (isLoginPage) {
-      redirected.current = true
-      router.replace('/livreur/dashboard')
-    }
-  }, [pathname, router])
+    // All checks passed
+    setAuthorized(true)
+    setAuthChecked(true)
+  }, [pathname])
 
-  const token = getStoredToken()
-  const user = getStoredUser()
-  const isLoginPage = pathname === '/livreur/login'
-  const isAuthOk = token && user && user.role === 'LIVREUR' && !isLoginPage
+  // Login page renders its own content (redirect spinner)
+  if (pathname === '/livreur/login') {
+    return <>{children}</>
+  }
 
-  if (!isAuthOk) {
+  // Still checking auth or redirecting
+  if (!authChecked || !authorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bm-bg">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-bm-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-stone-500 text-sm">Redirection...</p>
+          <p className="text-stone-500 text-sm">Chargement...</p>
         </div>
       </div>
     )

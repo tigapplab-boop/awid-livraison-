@@ -30,9 +30,9 @@ export default function UnifiedLoginPage() {
       try {
         const user = JSON.parse(userStr)
         if (user.role === 'ADMIN') {
-          router.replace('/admin/dashboard')
+          window.location.href = '/admin/dashboard'
         } else if (user.role === 'LIVREUR') {
-          router.replace('/livreur/dashboard')
+          window.location.href = '/livreur/dashboard'
         }
       } catch {
         // Invalid data, clear and show login
@@ -40,7 +40,7 @@ export default function UnifiedLoginPage() {
         localStorage.removeItem('bm_user')
       }
     }
-  }, [router])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,9 +93,9 @@ export default function UnifiedLoginPage() {
 
       // Role-based redirection
       if (data.user.role === 'ADMIN') {
-        router.push('/admin/dashboard')
+        window.location.href = '/admin/dashboard'
       } else if (data.user.role === 'LIVREUR') {
-        router.push('/livreur/dashboard')
+        window.location.href = '/livreur/dashboard'
       } else {
         setError('Rôle non reconnu')
         setLoading(false)

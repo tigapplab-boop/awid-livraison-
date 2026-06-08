@@ -135,12 +135,12 @@ export default function LivreurDashboard() {
   useEffect(() => {
     const stored = getStoredUser()
     if (!stored) {
-      router.replace('/login')
+      window.location.href = '/login'
       return
     }
     setUser(stored)
     setIsAvailable(stored.isAvailable)
-  }, [router])
+  }, [])
 
   // ========================================
   // Toast
@@ -416,7 +416,7 @@ export default function LivreurDashboard() {
   const handleLogout = () => {
     disconnect()
     clearAuth()
-    router.push('/login')
+    window.location.href = '/login'
   }
 
   // ========================================

@@ -6,14 +6,12 @@
 // ========================================
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function LivreurLoginPage() {
-  const router = useRouter()
-
   useEffect(() => {
-    router.replace('/login')
-  }, [router])
+    // Use window.location for a hard redirect that always works
+    window.location.href = '/login'
+  }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bm-bg">

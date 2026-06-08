@@ -1,0 +1,53 @@
+fix(security): resolve all audit findings - AWID Burger Minute
+
+CRITICAL FIXES:
+- JWT secret: remove hardcoded fallback, enforce 32+ chars validation
+- Auth: protect GET /api/orders/[id] with JWT or clientToken
+- Race conditions: add pendingAccepts guard + retry loop on order numbers
+- Socket.IO: add JWT authentication middleware + room authorization
+- Emit endpoint: add EMIT_SECRET header validation
+- Pricing: server-side price calculation, never trust client input
+
+MAJOR FIXES:
+- Add Redis service to docker-compose + migrate order-temp-store to ioredis
+- Add socket-service to docker-compose with healthcheck
+- Add VAPID env variables to .env.example
+- Force password change on first admin login (mustChangePassword flag)
+- Remove hardcoded VAPID public key fallback
+- Add rate limiting to all public endpoints
+- Restrict Socket.IO CORS to allowed origins
+- Add cleanup for expired temp orders (>1h)
+- Add pagination to GET /api/orders
+- Persist livreur availability status to database
+- Add Jest tests for critical flows (order-temp)
+- Remove public PostgreSQL port exposure
+
+MINOR FIXES:
+- Convert String roles to Prisma enums (UserRole, OrderStatus, etc.)
+- Add database indexes on frequent query columns
+- Remove obsolete 'Adapted for SQLite' comment
+- Fix memory leak in waiting page useEffect dependencies
+- Use PwaInstallPrompt component in layout
+- Align OrderSource enum between Prisma and frontend types
+- Remove unused OrderSource import in livreur-api
+- Add EMIT_SERVICE_URL to .env
+- Add Redis adapter for Socket.IO multi-instance
+- Add disconnect logging for Socket.IO rooms
+- Throw explicit error when VAPID missing in production
+- Batch push notifications with Promise.allSettled
+- Add /api/health endpoint for monitoring
+
+IMPROVEMENTS:
+- Batch create OrderItems with createMany
+- Add retry logic with exponential backoff for Socket emits
+- Add structured JSON logging
+- Add Content-Security-Policy headers in Caddyfile
+- Add notification sound for new orders (livreur)
+- Add ISR cache headers for /api/products
+
+BREAKING CHANGES:
+- Requires Redis service (docker-compose up -d redis)
+- Requires EMIT_SECRET env variable
+- Requires VAPID keys configuration
+
+Closes: audit-report-2026-06-08

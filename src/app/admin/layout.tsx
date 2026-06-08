@@ -142,12 +142,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!isLoginPage && !isAuthed) {
-      router.replace('/login')
+      window.location.href = '/login'
     }
     if (isLoginPage && isAuthed) {
-      router.replace('/admin/dashboard')
+      window.location.href = '/admin/dashboard'
     }
-  }, [isLoginPage, isAuthed, router])
+  }, [isLoginPage, isAuthed])
 
   const handleNavigate = useCallback((href: string) => {
     router.push(href)
@@ -157,8 +157,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = useCallback(() => {
     localStorage.removeItem('bm_token')
     localStorage.removeItem('bm_user')
-    router.replace('/login')
-  }, [router])
+    window.location.href = '/login'
+  }, [])
 
   // Login page doesn't need the layout
   if (isLoginPage) {
