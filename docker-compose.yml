@@ -13,8 +13,8 @@ services:
         - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
     user: root
-    # PAS DE ports: - Coolify gère l'accès via son proxy
-    # PAS DE labels custom - Coolify génère automatiquement les labels Caddy/Traefik
+    ports:
+      - '7000:3000'
     env_file:
       - .env
     environment:
