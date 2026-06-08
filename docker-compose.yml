@@ -30,12 +30,12 @@ services:
     restart: unless-stopped
     networks:
       - burger-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/categories"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+  interval: 1m
+  timeout: 10s
+  retries: 3
+  start_period: 40s
 
   # ---- Socket.IO Service ----
   socket-service:
