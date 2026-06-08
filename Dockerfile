@@ -90,10 +90,9 @@ echo "[Entrypoint] Starting Burger Minute..."
 
 # Run database migrations
 echo "[Entrypoint] Running migrations..."
-npx --yes prisma migrate deploy 2>&1 || {
-  echo "[Entrypoint] Migration failed, trying prisma db push..."
-  npx --yes prisma db push --accept-data-loss 2>&1 || true
-}
+npx --yes prisma migrate deploy 2>&1 || true
+echo "[Entrypoint] Syncing database schema..."
+npx --yes prisma db push --accept-data-loss 2>&1 || true
 
 # Seed if no users exist (first deploy)
 USER_COUNT=$(node -e "
