@@ -13,8 +13,16 @@ services:
         - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
     user: root
-    ports:
-      - '7000:3000'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.burgerminute.rule=Host(`burgerminute.giize.com`)"
+      - "traefik.http.routers.burgerminute.entrypoints=websecure"
+      - "traefik.http.routers.burgerminute.tls.certresolver=letsencrypt"
+      - "traefik.http.services.burgerminute.loadbalancer.server.port=3000"
+      - "traefik.http.routers.burgerminute-http.rule=Host(`burgerminute.giize.com`)"
+      - "traefik.http.routers.burgerminute-http.entrypoints=web"
+      - "traefik.http.middlewares.burgerminute-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.burgerminute-http.middlewares=burgerminute-redirect"
     env_file:
       - .env
     environment:
@@ -30,12 +38,12 @@ services:
     restart: unless-stopped
     networks:
       - burger-network
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
-  interval: 1m
-  timeout: 10s
-  retries: 3
-  start_period: 40s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # ---- Socket.IO Service ----
   socket-service:
