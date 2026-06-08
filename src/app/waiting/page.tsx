@@ -17,8 +17,8 @@ import {
 import { getTempOrder } from '@/bm/lib/api';
 import type { OrderTempRedis } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
-import { useLocale } from '@/bm/lib/locale';
-import { t } from '@/bm/lib/i18n';
+import { useLocale } from '@/lib/locale';
+import { t } from '@/lib/i18n';
 import { Phone, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 
 function WaitingContent() {
@@ -253,7 +253,7 @@ function WaitingContent() {
                 <div className="border-t border-stone-100 pt-3 flex justify-between items-center text-sm font-medium">
                   <span className="text-stone-500">{t('checkout.items', locale)}</span>
                   <span className="text-stone-800 bg-stone-100 px-2.5 py-1 rounded-lg">
-                    {orderTemp.items.reduce((sum, i) => sum + i.quantity, 0)} {total === 1 ? t('cart.article', locale) : t('cart.articles', locale)}
+                    {orderTemp.items.reduce((sum, i) => sum + i.quantity, 0)} {orderTemp.items.reduce((sum, i) => sum + i.quantity, 0) === 1 ? t('cart.article', locale) : t('cart.articles', locale)}
                   </span>
                 </div>
               </div>
@@ -309,7 +309,7 @@ function WaitingContent() {
               <div className="border-t border-stone-100 pt-3 flex justify-between items-center text-sm font-medium">
                 <span className="text-stone-500">{t('checkout.items', locale)}</span>
                 <span className="text-stone-800 bg-stone-100 px-2.5 py-1 rounded-lg">
-                  {orderTemp.items.reduce((sum, i) => sum + i.quantity, 0)} {total === 1 ? t('cart.article', locale) : t('cart.articles', locale)}
+                  {orderTemp.items.reduce((sum, i) => sum + i.quantity, 0)} {orderTemp.items.reduce((sum, i) => sum + i.quantity, 0) === 1 ? t('cart.article', locale) : t('cart.articles', locale)}
                 </span>
               </div>
             </div>

@@ -8,8 +8,8 @@ import { getTempOrder, updateTempOrder, getProducts, getZones, calculateFee } fr
 import { useCart, isSupplement } from '@/bm/lib/cart';
 import type { CategoryWithProducts, DeliveryZone, FeeCalculation, OrderTempRedis, Product, TempOrderItemDto, CartItem } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
-import { useLocale } from '@/bm/lib/locale';
-import { t } from '@/bm/lib/i18n';
+import { useLocale } from '@/lib/locale';
+import { t } from '@/lib/i18n';
 import SupplementPicker from '@/components/SupplementPicker';
 import { ChevronLeft, ChevronRight, Check, X, Minus, Plus } from 'lucide-react';
 

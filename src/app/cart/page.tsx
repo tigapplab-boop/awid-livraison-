@@ -1,11 +1,13 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/bm/lib/cart';
 import { getZones, calculateFee } from '@/bm/lib/api';
 import type { DeliveryZone, FeeCalculation, CartItem } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
-import { useLocale } from '@/bm/lib/locale';
-import { t } from '@/bm/lib/i18n';
+import { useLocale } from '@/lib/locale';
+import { t } from '@/lib/i18n';
 import { Minus, Plus, ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 
 function CartItemRow({

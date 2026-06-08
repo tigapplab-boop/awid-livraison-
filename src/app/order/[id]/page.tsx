@@ -14,8 +14,8 @@ import {
 } from '@/bm/lib/socket';
 import type { Order, OrderStatus } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
-import { useLocale } from '@/bm/lib/locale';
-import { t } from '@/bm/lib/i18n';
+import { useLocale } from '@/lib/locale';
+import { t } from '@/lib/i18n';
 import { X, Check, Package, Bike, MapPin, Clock, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function formatDate(dateStr: string | null): string {

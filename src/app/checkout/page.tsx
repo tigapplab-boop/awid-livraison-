@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,8 +10,8 @@ import { useCart } from '@/bm/lib/cart';
 import { checkPendingOrder, createTempOrder, cancelAndCreate } from '@/bm/lib/api';
 import type { OrderTempRedis, CreateTempOrderDto, CartItem } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
-import { useLocale } from '@/bm/lib/locale';
-import { t } from '@/bm/lib/i18n';
+import { useLocale } from '@/lib/locale';
+import { t } from '@/lib/i18n';
 import { ChevronLeft, ChevronRight, Phone, MapPin, User, FileText, Check } from 'lucide-react';
 
 const checkoutSchema = z.object({
