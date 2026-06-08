@@ -14,7 +14,7 @@ RUN npm install -g bun
 
 # Copy package files for dependency installation
 COPY package.json package-lock.json ./
-RUN bun add -d @types/socket.io
+RUN bun add socket.io @types/socket.io
 RUN bun install
 
 # ---- Stage 2: Builder ----
@@ -36,8 +36,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Build Next.js (excluding mini-services)
-RUN bun run build --filter '!./mini-services' --verbose
+# Build Next.js
+RUN bun run build --verbose
 
 # Copy static assets and public into standalone output
 RUN cp -r .next/static .next/standalone/.next/ && \
