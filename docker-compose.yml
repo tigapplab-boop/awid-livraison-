@@ -13,16 +13,8 @@ services:
         - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
     user: root
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.burgerminute.rule=Host(`burgerminute.giize.com`)"
-      - "traefik.http.routers.burgerminute.entrypoints=websecure"
-      - "traefik.http.routers.burgerminute.tls.certresolver=letsencrypt"
-      - "traefik.http.services.burgerminute.loadbalancer.server.port=3000"
-      - "traefik.http.routers.burgerminute-http.rule=Host(`burgerminute.giize.com`)"
-      - "traefik.http.routers.burgerminute-http.entrypoints=web"
-      - "traefik.http.middlewares.burgerminute-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.burgerminute-http.middlewares=burgerminute-redirect"
+    # PAS DE ports: - Coolify gère l'accès via son proxy
+    # PAS DE labels custom - Coolify génère automatiquement les labels Caddy/Traefik
     env_file:
       - .env
     environment:
