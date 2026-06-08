@@ -64,6 +64,9 @@ services:
   redis:
     image: redis:7-alpine
     container_name: burger-minute-redis
+    command: /bin/sh -c 'redis-server --requirepass "$${REDIS_PASSWORD:-burgerm1nute}" --appendonly yes'
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-burgerm1nute}
     volumes:
       - redis_data:/data
     healthcheck:

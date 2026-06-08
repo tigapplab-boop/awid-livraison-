@@ -13,6 +13,9 @@ COPY package.json bun.lock ./
 # Install dependencies
 RUN bun install --frozen-lockfile
 
+# Install curl for Docker healthcheck
+RUN apk add --no-cache curl
+
 # Cache bust to prevent Docker overlay2 bug
 ENV BUST_CACHE=1
 
