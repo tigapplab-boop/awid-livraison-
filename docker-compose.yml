@@ -13,8 +13,8 @@ services:
         - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
     user: root
-    expose:
-      - '3000'
+    ports:
+      - '7000:3000'
     env_file:
       - .env
     environment:
