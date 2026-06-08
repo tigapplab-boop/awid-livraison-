@@ -42,6 +42,7 @@ export default function CheckoutPage() {
     isNightDelivery,
     subtotal,
     total,
+    clearCart,
   } = useCart();
 
   const [submitting, setSubmitting] = useState(false);
@@ -110,6 +111,7 @@ export default function CheckoutPage() {
       const result = await createTempOrder(dto);
 
       if (result.action === 'CREATED' && result.tempToken) {
+        clearCart();
         router.push(`/waiting?token=${result.tempToken}`);
       } else if (result.action === 'EXISTING_PENDING' && result.existingOrder) {
         setPendingModal({
@@ -176,6 +178,7 @@ export default function CheckoutPage() {
       );
 
       setPendingModal(null);
+      clearCart();
       router.push(`/waiting?token=${result.tempToken}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur lors de la création';

@@ -462,31 +462,55 @@ export default function ProductsPage() {
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif"
                     className="hidden"
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
                       setUploading(true)
-                      try {
-                        const formData = new FormData()
-                        formData.append('file', file)
-                        const res = await fetch('/api/upload', {
-                          method: 'POST',
-                          headers: { Authorization: `Bearer ${token}` },
-                          body: formData,
-                        })
-                        if (!res.ok) {
-                          const data = await res.json()
-                          throw new Error(data.error || 'Upload échoué')
+                      
+                      const reader = new FileReader()
+                      reader.onload = (event) => {
+                        const img = new Image()
+                        img.onload = () => {
+                          const canvas = document.createElement('canvas')
+                          let width = img.width
+                          let height = img.height
+                          
+                          // Maximum dimensions - optimized for mobile list view
+                          const MAX_WIDTH = 400
+                          const MAX_HEIGHT = 400
+                          
+                          if (width > height) {
+                            if (width > MAX_WIDTH) {
+                              height *= MAX_WIDTH / width
+                              width = MAX_WIDTH
+                            }
+                          } else {
+                            if (height > MAX_HEIGHT) {
+                              width *= MAX_HEIGHT / height
+                              height = MAX_HEIGHT
+                            }
+                          }
+                          
+                          canvas.width = width
+                          canvas.height = height
+                          const ctx = canvas.getContext('2d')
+                          ctx?.drawImage(img, 0, 0, width, height)
+                          
+                          // Compress to WebP or JPEG with 70% quality for optimal database storage
+                          const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
+                          
+                          setPImage(dataUrl)
+                          setUploading(false)
+                          setMessage({ type: 'success', text: 'Image traitée et optimisée avec succès' })
                         }
-                        const data = await res.json()
-                        setPImage(data.url)
-                        setMessage({ type: 'success', text: 'Image uploadée avec succès' })
-                      } catch (err) {
-                        setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erreur upload' })
-                      } finally {
-                        setUploading(false)
-                        e.target.value = ''
+                        img.onerror = () => {
+                          setMessage({ type: 'error', text: 'Erreur lors de la lecture de l\'image' })
+                          setUploading(false)
+                        }
+                        img.src = event.target?.result as string
                       }
+                      reader.readAsDataURL(file)
+                      e.target.value = ''
                     }}
                     disabled={uploading}
                   />
