@@ -71,7 +71,8 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/bcrypt ./node_modules/bcrypt
-COPY --from=builder /app/node_modules/.pnpm ./node_modules/.pnpm 2>/dev/null || true
+RUN mkdir -p ./node_modules/.pnpm && \
+    cp -r --ignore-errors /app/node_modules/.pnpm/* ./node_modules/.pnpm/ || true
 
 # Copy package.json for npx prisma
 COPY --from=builder /app/package.json ./
