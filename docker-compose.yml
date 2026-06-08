@@ -42,7 +42,7 @@ services:
     networks:
       - burger-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]  # ← CHANGÉ : / au lieu de /healthz
       interval: 1m
       timeout: 10s
       retries: 3
