@@ -27,7 +27,7 @@ export async function PATCH(
       )
     }
 
-    const tempOrder = getTempOrderByToken(token)
+    const tempOrder = await getTempOrderByToken(token)
     if (!tempOrder) {
       return NextResponse.json(
         { error: 'Temp order not found or expired' },
@@ -42,7 +42,7 @@ export async function PATCH(
       )
     }
 
-    updateTempOrderStatus(token, 'REJECTED')
+    await updateTempOrderStatus(token, 'REJECTED')
 
     // Emit real-time socket event to client
     try {

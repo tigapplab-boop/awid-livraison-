@@ -19,7 +19,9 @@ export function getSocket(): Socket {
   if (!socket) {
     // Use gateway pattern: relative path with XTransformPort query param
     // Caddy will forward to the correct port
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_livreur_token') || localStorage.getItem('bm_admin_token') : null;
     socket = io('/?XTransformPort=' + SOCKET_PORT, {
+      auth: { token },
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
@@ -189,7 +191,10 @@ export async function emitToRoom(event: string, room: string, data: Record<strin
   try {
     const res = await fetch(`${EMIT_URL}/emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-emit-secret': process.env.EMIT_SECRET || ''
+      },
       body: JSON.stringify({ event, room, data }),
     });
     return res.ok;

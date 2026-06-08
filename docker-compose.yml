@@ -20,6 +20,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - uploads_data:/app/upload
     restart: unless-stopped
@@ -32,6 +34,45 @@ services:
       retries: 3
       start_period: 40s
 
+  # ---- Socket.IO Service ----
+  socket-service:
+    build:
+      context: ./mini-services/socket-service
+      dockerfile: Dockerfile
+    container_name: burger-minute-socket
+    environment:
+      - PORT=3003
+      - EMIT_PORT=3004
+      - API_URL=http://app:3000
+      - EMIT_SECRET=${EMIT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    expose:
+      - "3003"
+      - "3004"
+    restart: unless-stopped
+    networks:
+      - burger-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ---- Redis ----
+  redis:
+    image: redis:7-alpine
+    container_name: burger-minute-redis
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - burger-network
+
   # ---- PostgreSQL Database ----
   db:
     image: postgres:16-alpine
@@ -40,8 +81,8 @@ services:
       POSTGRES_DB: burger_minute
       POSTGRES_USER: burger
       POSTGRES_PASSWORD: burger_secret
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"  # Communication interne uniquement
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -58,6 +99,8 @@ volumes:
   postgres_data:
     driver: local
   uploads_data:
+    driver: local
+  redis_data:
     driver: local
 
 # ---- Network ----

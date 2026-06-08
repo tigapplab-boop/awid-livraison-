@@ -65,7 +65,9 @@ export async function POST(
       select: { id: true, name: true, price: true },
     })
 
-    const productMap = new Map(products.map(p => [p.id, p]))
+    const productMap = new Map<string, { id: string; name: string; price: number }>(
+      products.map(p => [p.id, p])
+    )
 
     const enrichedItems = items.map((item: { productId: string; quantity: number; price?: number; name?: string; notes?: string }) => {
       const product = productMap.get(item.productId)
@@ -86,7 +88,7 @@ export async function POST(
 
     const calculatedSubtotal = subtotal || enrichedItems.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0)
 
-    const newOrder = cancelAndCreate(token, {
+    const newOrder = await cancelAndCreate(token, {
       clientPhone,
       clientName,
       clientAddress,

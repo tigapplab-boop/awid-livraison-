@@ -28,7 +28,7 @@ export async function PATCH(
       )
     }
 
-    const tempOrder = getTempOrderByToken(token)
+    const tempOrder = await getTempOrderByToken(token)
     if (!tempOrder) {
       return NextResponse.json(
         { error: 'Temp order not found or expired' },
@@ -52,7 +52,7 @@ export async function PATCH(
     }
 
     // Accept the order - assigns it to this livreur
-    const acceptedOrder = acceptTempOrder(token, user.userId)
+    const acceptedOrder = await acceptTempOrder(token, user.userId)
     if (!acceptedOrder) {
       return NextResponse.json(
         { error: 'Order could not be accepted. It may have already been claimed by another livreur.' },

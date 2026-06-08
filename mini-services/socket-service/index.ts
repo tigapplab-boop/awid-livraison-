@@ -13,7 +13,10 @@ const io = new Server(httpServer, {
   // DO NOT change the path, it is used by Caddy to forward the request to the correct port
   path: '/',
   cors: {
-    origin: '*',
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'https://burgerminute.space-z.ai',
+      'http://localhost:3000',
+    ],
     methods: ['GET', 'POST'],
   },
   pingTimeout: 60000,
@@ -36,6 +39,32 @@ function clientRoom(token: string): string {
 // Socket Connection Handling
 // ========================================
 
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.query?.token
+
+  if (!token) {
+    socket.data.role = 'anonymous'
+    return next()
+  }
+
+  try {
+    // Vérifier le token JWT via l'API Next.js
+    const res = await fetch(`${process.env.API_URL || 'http://app:3000'}/api/auth/verify`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (res.ok) {
+      const payload = await res.json()
+      socket.data.userId = payload.userId
+      socket.data.role = payload.role
+      return next()
+    }
+    return next(new Error('Authentication failed'))
+  } catch {
+    return next(new Error('Authentication error'))
+  }
+})
+
 io.on('connection', (socket: Socket) => {
   console.log(`[Socket] Connected: ${socket.id}`);
 
@@ -49,6 +78,17 @@ io.on('connection', (socket: Socket) => {
       socket.emit('error', { message: 'userId is required for join:livreur' });
       return;
     }
+    
+    if (socket.data.role !== 'LIVREUR' && socket.data.role !== 'ADMIN') {
+      socket.emit('error', { message: 'Unauthorized' })
+      return
+    }
+    // Vérifier que le livreur ne rejoint que SA room
+    if (socket.data.role === 'LIVREUR' && socket.data.userId !== userId) {
+      socket.emit('error', { message: 'Cannot join another livreur room' })
+      return
+    }
+    
     // Join individual room (for targeted notifications)
     const room = livreurRoom(userId);
     socket.join(room);
@@ -59,6 +99,10 @@ io.on('connection', (socket: Socket) => {
   });
 
   socket.on('join:admin', () => {
+    if (socket.data.role !== 'ADMIN') {
+      socket.emit('error', { message: 'Admin access required' })
+      return
+    }
     socket.join('admin');
     console.log(`[Socket] ${socket.id} joined room: admin`);
     socket.emit('joined', { room: 'admin' });
@@ -123,11 +167,17 @@ io.on('connection', (socket: Socket) => {
 //   delivery:started→ room "admin" + "client:{token}"
 //   delivery:issue  → room "admin"
 
+const EMIT_SECRET = process.env.EMIT_SECRET
+if (!EMIT_SECRET || EMIT_SECRET.length < 32) {
+  console.error('FATAL: EMIT_SECRET must be set and >= 32 chars')
+  process.exit(1)
+}
+
 const emitServer = createServer((req: IncomingMessage, res: ServerResponse) => {
   // CORS headers for internal use
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-emit-secret');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -138,6 +188,13 @@ const emitServer = createServer((req: IncomingMessage, res: ServerResponse) => {
   if (req.method !== 'POST' || req.url !== '/emit') {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found. Use POST /emit' }));
+    return;
+  }
+
+  const authHeader = req.headers['x-emit-secret']
+  if (authHeader !== EMIT_SECRET) {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
     return;
   }
 

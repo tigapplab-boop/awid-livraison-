@@ -6,9 +6,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { authenticateRequest, type JwtPayload } from '@/bm/lib/auth'
+import { rateLimit } from '@/bm/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown'
+    const rateResult = rateLimit(clientIp, { maxRequests: 30, windowMs: 60_000, key: 'orders-get' })
+    if (!rateResult.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(Math.ceil((rateResult.resetAt - Date.now()) / 1000)) } })
+    }
     // Auth required
     const authResult = await authenticateRequest(request)
     if (authResult instanceof NextResponse) return authResult

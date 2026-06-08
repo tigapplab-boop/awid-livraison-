@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
       select: { id: true, name: true, price: true },
     })
 
-    const productMap = new Map(products.map(p => [p.id, p]))
+    const productMap = new Map<string, { id: string; name: string; price: number }>(
+      products.map(p => [p.id, p])
+    )
 
     // Calculate subtotal from products
     const orderItems = items.map((item: { productId: string; quantity: number }) => {

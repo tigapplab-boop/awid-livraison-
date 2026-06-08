@@ -22,14 +22,15 @@ async function main() {
   // ==================== ADMIN ====================
   const admin = await prisma.user.create({
     data: {
-      name: 'Admin',
-      phone: 'admin',
+      name: 'Admin Burger Minute',
+      phone: '0550000000',
       role: 'ADMIN',
-      password: hashSync('admin', 10),
+      password: hashSync('admin123', 10),
       isAvailable: true,
+      mustChangePassword: true,
     },
   });
-  console.log(`✅ Admin created: ${admin.name} (identifiant: admin / mot de passe: admin)`);
+  console.log(`✅ Admin created: ${admin.name} (identifiant: 0550000000 / mot de passe: admin123)`);
 
   // ==================== LIVREURS ====================
   const livreur1 = await prisma.user.create({

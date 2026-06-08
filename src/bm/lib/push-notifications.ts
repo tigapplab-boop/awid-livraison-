@@ -3,9 +3,7 @@
 // Browser-side push subscription management using VAPID
 // ========================================
 
-const VAPID_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-  'BBoM99E14LHPIR5nVL9h8YkWUCuWbKpIijoJvElMlHx67WZEYzqagEO74eav3ic84ORSGW5WeJuua58vhhzC0Xk'
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
 /** Convert a base64 string to a Uint8Array for the push manager */
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -38,6 +36,11 @@ export async function subscribePush(userId?: string): Promise<PushSubscriptionPa
   try {
     if (!('serviceWorker' in navigator)) {
       console.warn('[Push] Service workers are not supported in this browser')
+      return null
+    }
+
+    if (!VAPID_PUBLIC_KEY) {
+      console.warn('[Push] NEXT_PUBLIC_VAPID_PUBLIC_KEY not configured')
       return null
     }
 

@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { token } = await params
-    const order = getTempOrderByToken(token)
+    const order = await getTempOrderByToken(token)
 
     if (!order) {
       return NextResponse.json(

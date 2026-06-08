@@ -77,6 +77,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (user.mustChangePassword) {
+      return NextResponse.json({ 
+        error: 'Must change password', 
+        mustChangePassword: true 
+      }, { status: 403 })
+    }
+
     // Create JWT token
     const token = await createToken({
       userId: user.id,
@@ -84,7 +91,7 @@ export async function POST(request: NextRequest) {
       name: user.name,
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       token,
       user: {
         id: user.id,
@@ -94,6 +101,16 @@ export async function POST(request: NextRequest) {
         isAvailable: user.isAvailable,
       },
     })
+
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // relax a bit for PWA navigation
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('[Auth] Login error:', error)
     return NextResponse.json(

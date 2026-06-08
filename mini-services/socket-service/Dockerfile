@@ -16,8 +16,11 @@ RUN bun install --frozen-lockfile
 # Copy application source
 COPY . .
 
+# Install pm2
+RUN bun install -g pm2
+
 # Expose Socket.IO port (3003) and internal emit API port (3004)
 EXPOSE 3003 3004
 
-# Start the service
-CMD ["bun", "index.ts"]
+# Start the service with pm2
+CMD ["pm2-runtime", "start", "index.ts", "--interpreter", "bun"]

@@ -15,32 +15,46 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-      ...options?.headers,
-    },
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-  if (res.status === 401) {
-    // Token expired or invalid
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('bm_token')
-      localStorage.removeItem('bm_user')
-      window.location.href = '/login'
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...options?.headers,
+      },
+    })
+
+    clearTimeout(timeoutId)
+
+    if (res.status === 401) {
+      // Token expired or invalid
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('bm_token')
+        localStorage.removeItem('bm_user')
+        window.location.href = '/login'
+      }
+      throw new Error('Session expirée. Veuillez vous reconnecter.')
     }
-    throw new Error('Session expirée. Veuillez vous reconnecter.')
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Erreur serveur')
+    }
+
+    return data as T
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error("Délai d'attente dépassé. Vérifiez votre connexion.")
+    }
+    throw error
   }
-
-  const data = await res.json()
-
-  if (!res.ok) {
-    throw new Error(data.error || 'Erreur serveur')
-  }
-
-  return data as T
 }
 
 // ========================================
@@ -59,19 +73,33 @@ export interface LoginResponse {
 }
 
 export async function login(phone: string, password: string): Promise<LoginResponse> {
-  const res = await fetch(`${API_BASE}/auth`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, password }),
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-  const data = await res.json()
+  try {
+    const res = await fetch(`${API_BASE}/auth`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password }),
+    })
 
-  if (!res.ok) {
-    throw new Error(data.error || 'Identifiants invalides')
+    clearTimeout(timeoutId)
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Identifiants invalides')
+    }
+
+    return data as LoginResponse
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error("Délai d'attente dépassé. Vérifiez votre connexion.")
+    }
+    throw error
   }
-
-  return data as LoginResponse
 }
 
 // ========================================

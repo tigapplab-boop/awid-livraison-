@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { authenticateRequest, type JwtPayload } from '@/bm/lib/auth'
+import { rateLimit } from '@/bm/lib/rate-limit'
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
@@ -22,7 +23,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown'
+    const rateResult = rateLimit(clientIp, { maxRequests: 60, windowMs: 60_000, key: 'orders-id-get' })
+    if (!rateResult.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(Math.ceil((rateResult.resetAt - Date.now()) / 1000)) } })
+    }
+
     const { id } = await params
+    const clientToken = request.nextUrl.searchParams.get('clientToken')
 
     const order = await db.order.findUnique({
       where: { id },
@@ -51,6 +59,26 @@ export async function GET(
         { error: 'Order not found' },
         { status: 404 }
       )
+    }
+
+    // Vérifier auth admin/livreur
+    const authResult = await authenticateRequest(request)
+
+    if (authResult instanceof NextResponse) {
+      // Pas authentifié → vérifier clientToken
+      if (!clientToken || order.clientToken !== clientToken) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    }
+
+    // Si clientToken uniquement, masquer les données sensibles
+    if (authResult instanceof NextResponse && clientToken) {
+      const sanitized = {
+        ...order,
+        clientPhone: undefined,
+        assignedLivreur: order.assignedLivreur ? { name: order.assignedLivreur.name } : null,
+      }
+      return NextResponse.json(sanitized)
     }
 
     return NextResponse.json(order)

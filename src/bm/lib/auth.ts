@@ -6,9 +6,16 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { NextResponse } from 'next/server'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'burger-minute-secret-key-change-in-production'
-)
+const JWT_SECRET_RAW = process.env.JWT_SECRET
+
+if (!JWT_SECRET_RAW || JWT_SECRET_RAW.length < 32) {
+  throw new Error(
+    'FATAL: JWT_SECRET must be set in environment and be at least 32 characters. ' +
+    'Generate one with: openssl rand -base64 48'
+  )
+}
+
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW)
 
 export interface JwtPayload {
   userId: string

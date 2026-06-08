@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const order = getPendingOrderByPhone(phone)
+    const order = await getPendingOrderByPhone(phone)
 
     return NextResponse.json({
       hasPending: order !== null && order.status === 'PENDING',

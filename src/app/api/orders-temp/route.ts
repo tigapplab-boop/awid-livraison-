@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     // If livreur, only return PENDING orders (available to all) + ACCEPTED by this livreur
     // If admin, return all pending and accepted orders
     const orders = user.role === 'LIVREUR'
-      ? getAvailableTempOrders(user.userId)
-      : getAllPendingTempOrders()
+      ? await getAvailableTempOrders(user.userId)
+      : await getAllPendingTempOrders()
 
     return NextResponse.json(orders)
   } catch (error) {
@@ -153,26 +153,44 @@ export async function POST(request: NextRequest) {
     const productIds = items.map((item: { productId: string }) => item.productId)
     const products = await db.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, name: true, price: true },
+      select: { id: true, name: true, price: true, isAvailable: true },
     })
 
-    const productMap = new Map(products.map(p => [p.id, p]))
+    const productMap = new Map<string, { id: string; name: string; price: number; isAvailable: boolean }>(
+      products.map(p => [p.id, p])
+    )
 
-    const enrichedItems = items.map((item: { productId: string; quantity: number; price?: number; name?: string; notes?: string }) => {
+    const enrichedItems = items.map((item: { productId: string; quantity: number; notes?: string }) => {
       const product = productMap.get(item.productId)
+      if (!product) {
+        throw new Error(`Product ${item.productId} not found`)
+      }
+      if (!product.isAvailable) {
+        throw new Error(`Product ${product.name} is not available`)
+      }
       return {
         productId: item.productId,
-        name: item.name || product?.name || 'Unknown Product',
-        quantity: item.quantity,
-        price: item.price || product?.price || 0,
+        name: product.name,        // TOUJOURS le nom du serveur
+        quantity: Math.min(item.quantity, 20), // Max 20 par item
+        price: product.price,      // TOUJOURS le prix du serveur
         notes: item.notes,
       }
     })
 
-    const calculatedSubtotal = subtotal || enrichedItems.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0)
+    // Recalculer le subtotal côté serveur
+    const calculatedSubtotal = enrichedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity, 0
+    )
+
+    // Calculer deliveryFee côté serveur
+    const now = new Date()
+    const currentHour = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    const isNight = currentHour >= zone.startNight || currentHour <= zone.endNight
+    const calculatedDeliveryFee = isNight ? zone.nightFee : zone.dayFee
+    const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee
 
     // Create temp order - no auto-assignment, first livreur to accept claims it
-    const result = createTempOrder({
+    const result = await createTempOrder({
       clientPhone,
       clientName: clientName.trim(),
       clientAddress: clientAddress.trim(),
@@ -180,8 +198,8 @@ export async function POST(request: NextRequest) {
       deliveryZoneId: zone.id,
       items: enrichedItems,
       subtotal: calculatedSubtotal,
-      deliveryFee: deliveryFee || 0,
-      isNightDelivery: isNightDelivery || false,
+      deliveryFee: calculatedDeliveryFee,
+      isNightDelivery: isNight,
       livreurId: null, // No auto-assignment
       notes,
     })

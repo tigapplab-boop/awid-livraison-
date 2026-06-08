@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { rateLimit } from '@/bm/lib/rate-limit'
 
 interface SubscribeBody {
   endpoint: string
@@ -22,6 +23,12 @@ interface UnsubscribeBody {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown'
+    const rateResult = rateLimit(clientIp, { maxRequests: 10, windowMs: 60_000, key: 'push-subscribe' })
+    if (!rateResult.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(Math.ceil((rateResult.resetAt - Date.now()) / 1000)) } })
+    }
+
     const body: SubscribeBody = await request.json()
 
     if (!body.endpoint || !body.keys?.p256dh || !body.keys?.auth) {

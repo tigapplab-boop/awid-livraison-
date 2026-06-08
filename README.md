@@ -52,6 +52,8 @@ Application web complète de gestion de commandes et de livraison pour un restau
 
 L'application est conçue comme un monolith Next.js avec un mini-service Socket.IO séparé pour les communications temps réel. En développement, SQLite est utilisé pour la simplicité ; en production, PostgreSQL est recommandé.
 
+> **Note (Architecture) :** Architecture monolithique — séparation des bundles prévue en V2. Pour le moment, l'accès aux interfaces protégées est sécurisé via le middleware Next.js.
+
 ---
 
 ## 🖥 Interfaces
@@ -218,8 +220,9 @@ DATABASE_URL=file:./db/custom.db
 # ========================================
 # Authentification JWT
 # ========================================
-# Clé secrète pour la signature des tokens (64 caractères aléatoires)
-JWT_SECRET=change-me-to-a-random-64-char-string
+# Clé secrète pour la signature des tokens (min 32 caractères aléatoires)
+# Générez-en une avec: openssl rand -base64 48
+JWT_SECRET=[GENERATE_WITH_OPENSSL]
 
 # ========================================
 # Notifications Web Push (VAPID)
