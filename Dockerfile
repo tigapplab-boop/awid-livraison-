@@ -49,6 +49,9 @@ RUN cp -r .next/static .next/standalone/.next/ && \
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Cache bust to prevent Docker overlay2 bug
+ENV BUST_CACHE=1
+
 # Install openssl for jose JWT library (WebCrypto API) + curl for healthcheck
 RUN apk add --no-cache openssl curl
 

@@ -13,6 +13,9 @@ COPY package.json bun.lock ./
 # Install dependencies
 RUN bun install --frozen-lockfile
 
+# Cache bust to prevent Docker overlay2 bug
+ENV BUST_CACHE=1
+
 # Copy application source
 COPY . .
 
