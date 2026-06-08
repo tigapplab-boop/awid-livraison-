@@ -79,6 +79,9 @@ RUN mkdir -p ./node_modules/.pnpm && \
 # Copy package.json for npx prisma
 COPY --from=builder /app/package.json ./
 
+# Copy .bin directory to ensure npx finds prisma locally
+COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
+
 # Set upload directory for uploaded files
 ENV UPLOAD_DIR="/app/upload"
 
@@ -95,9 +98,9 @@ echo "[Entrypoint] Starting Burger Minute..."
 
 # Run database migrations
 echo "[Entrypoint] Running migrations..."
-npx prisma migrate deploy 2>&1 || {
+npx --yes prisma migrate deploy 2>&1 || {
   echo "[Entrypoint] Migration failed, trying prisma db push..."
-  npx prisma db push --accept-data-loss 2>&1 || true
+  npx --yes prisma db push --accept-data-loss 2>&1 || true
 }
 
 # Seed if no users exist (first deploy)
