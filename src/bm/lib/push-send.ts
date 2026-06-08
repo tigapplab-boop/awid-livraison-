@@ -12,11 +12,15 @@ const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:contact@burgerminute.d
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || ''
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || ''
 
-if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
+if (vapidPublicKey && vapidPrivateKey && vapidPublicKey !== 'undefined' && vapidPrivateKey !== 'undefined') {
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
+  } catch (error) {
+    console.error('[Push] Failed to set VAPID details:', error instanceof Error ? error.message : error)
+  }
 } else {
   console.warn(
-    '[Push] VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in .env'
+    '[Push] VAPID keys not configured or invalid. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in .env'
   )
 }
 
