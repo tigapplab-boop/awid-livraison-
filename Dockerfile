@@ -68,19 +68,11 @@ COPY --from=builder /app/.next/standalone/public ./public
 # Copy Prisma schema, migrations, and seed for runtime
 COPY --from=builder /app/prisma ./prisma
 
-# Copy node_modules with prisma and seed dependencies for runtime
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/bcrypt ./node_modules/bcrypt
-RUN mkdir -p ./node_modules/.pnpm && \
-    cp -r --ignore-errors /app/node_modules/.pnpm/* ./node_modules/.pnpm/ || true
-
-# Copy package.json for npx prisma
+# Copy package.json for npx and scripts
 COPY --from=builder /app/package.json ./
 
-# Copy .bin directory to ensure npx finds prisma locally
-COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
+# Copy full node_modules to ensure all CLI tools (prisma, tsx) work perfectly
+COPY --from=builder /app/node_modules ./node_modules
 
 # Set upload directory for uploaded files
 ENV UPLOAD_DIR="/app/upload"
