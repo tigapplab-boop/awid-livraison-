@@ -13,7 +13,8 @@ export default function LivreurLoginPage() {
     // On nettoie le localStorage pour casser la boucle infinie de redirection
     localStorage.removeItem('bm_token')
     localStorage.removeItem('bm_user')
-    window.location.href = '/login'
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    window.location.href = '/login?kicked=1'
   }, [])
 
   return (

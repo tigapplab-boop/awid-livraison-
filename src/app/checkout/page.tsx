@@ -1,6 +1,4 @@
-'use client';
-
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -10,20 +8,15 @@ import { useCart } from '@/bm/lib/cart';
 import { checkPendingOrder, createTempOrder, cancelAndCreate } from '@/bm/lib/api';
 import type { OrderTempRedis, CreateTempOrderDto, CartItem } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
+import { useLocale } from '@/bm/lib/locale';
+import { t } from '@/bm/lib/i18n';
+import { ChevronLeft, ChevronRight, Phone, MapPin, User, FileText, Check } from 'lucide-react';
 
 const checkoutSchema = z.object({
-  clientName: z
-    .string()
-    .min(2, 'Le nom doit contenir au moins 2 caractères')
-    .max(100, 'Le nom est trop long'),
-  clientPhone: z
-    .string()
-    .regex(/^0[5-7][0-9]{8}$/, 'Numéro de téléphone algérien invalide (format: 05XXXXXXXX)'),
-  clientAddress: z
-    .string()
-    .min(10, 'L\'adresse doit contenir au moins 10 caractères')
-    .max(500, 'L\'adresse est trop longue'),
-  notes: z.string().max(500, 'Les notes sont trop longues').optional(),
+  clientName: z.string().min(2).max(100),
+  clientPhone: z.string().regex(/^0[5-7][0-9]{8}$/),
+  clientAddress: z.string().min(10).max(500),
+  notes: z.string().max(500).optional(),
 });
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
@@ -35,6 +28,7 @@ interface PendingModalData {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { locale, isRTL, isMounted } = useLocale();
   const {
     items,
     selectedZone,
@@ -64,11 +58,10 @@ export default function CheckoutPage() {
     },
   });
 
-  // Build items array with notes for supplements
   const buildOrderItems = useCallback((cartItems: CartItem[]) => {
     return cartItems.map((item) => {
       const notes = item.attachedToProductId
-        ? `Pour ${cartItems.find((i) => i.product.id === item.attachedToProductId)?.product.name || 'burger'}`
+        ? `${t('cart.for', locale)} ${cartItems.find((i) => i.product.id === item.attachedToProductId)?.product.name || 'burger'}`
         : undefined;
       return {
         productId: item.product.id,
@@ -76,9 +69,8 @@ export default function CheckoutPage() {
         notes,
       };
     });
-  }, []);
+  }, [locale]);
 
-  // Group items for display
   const groupedItems = useMemo(() => {
     const mainItems = items.filter((item) => !item.attachedToProductId);
     const result: Array<{
@@ -120,7 +112,7 @@ export default function CheckoutPage() {
         });
       }
     },
-    [selectedZone, items, router, buildOrderItems],
+    [selectedZone, items, router, buildOrderItems, clearCart],
   );
 
   const onSubmit = useCallback(
@@ -144,7 +136,7 @@ export default function CheckoutPage() {
 
         await createNewOrder(data);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erreur lors de la commande';
+        const message = err instanceof Error ? err.message : 'Erreur';
         setSubmitError(message);
         setSubmitting(false);
       }
@@ -181,29 +173,29 @@ export default function CheckoutPage() {
       clearCart();
       router.push(`/waiting?token=${result.tempToken}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur lors de la création';
+      const message = err instanceof Error ? err.message : 'Erreur';
       setSubmitError(message);
       setPendingAction(null);
     }
-  }, [pendingModal, selectedZone, items, router, buildOrderItems]);
+  }, [pendingModal, selectedZone, items, router, buildOrderItems, clearCart]);
+
+  if (!isMounted) return null;
 
   if (!selectedZone || items.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-40 bg-bm-primary px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/cart" className="text-stone-900" aria-label="Retour au panier">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-              </svg>
+      <div className="flex min-h-[100dvh] flex-col bg-stone-50" dir={isRTL ? 'rtl' : 'ltr'}>
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-stone-200/50 px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Link href="/cart" className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors">
+              {isRTL ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
             </Link>
-            <h1 className="text-lg font-bold text-stone-900">Commander</h1>
+            <h1 className="text-xl font-bold text-stone-900">{t('checkout.title', locale)}</h1>
           </div>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center px-6">
-          <p className="text-stone-500">Votre panier est vide ou aucune zone sélectionnée</p>
-          <Link href="/menu" className="btn-bm btn-bm-primary btn-bm-lg mt-4">
-            Voir le menu
+          <p className="text-lg font-bold text-stone-700 text-center">{t('checkout.empty', locale)}</p>
+          <Link href="/menu" className="btn-bm-lg btn-bm-primary mt-6">
+            {t('checkout.backToMenu', locale)}
           </Link>
         </div>
       </div>
@@ -211,196 +203,227 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 bg-bm-primary px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Link href="/cart" className="text-stone-900" aria-label="Retour au panier">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-            </svg>
+    <div className="flex min-h-[100dvh] flex-col bg-stone-50" dir={isRTL ? 'rtl' : 'ltr'}>
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-stone-200/50 px-4 py-4">
+        <div className="flex items-center gap-4">
+          <Link href="/cart" className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors">
+            {isRTL ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
           </Link>
-          <h1 className="text-lg font-bold text-stone-900">Commander</h1>
+          <h1 className="text-xl font-bold text-stone-900">{t('checkout.title', locale)}</h1>
         </div>
       </header>
 
-      <div className="flex-1 px-4 py-4">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label htmlFor="clientName" className="mb-1.5 block text-sm font-semibold text-stone-700">
-              Nom complet
-            </label>
-            <input
-              id="clientName"
-              type="text"
-              placeholder="Votre nom"
-              className={`input-bm ${errors.clientName ? 'input-bm-error' : ''}`}
-              {...register('clientName')}
-            />
-            {errors.clientName && (
-              <p className="mt-1 text-xs text-bm-secondary">{errors.clientName.message}</p>
-            )}
+      <div className="flex-1 px-4 py-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-4">
+            <div className="relative">
+              <label htmlFor="clientName" className="mb-1.5 block text-sm font-bold text-stone-700">
+                {t('checkout.fullName', locale)} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className={`absolute inset-y-0 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} flex items-center pointer-events-none`}>
+                  <User className="h-5 w-5 text-stone-400" />
+                </div>
+                <input
+                  id="clientName"
+                  type="text"
+                  placeholder={t('checkout.fullName', locale)}
+                  className={`input-bm pl-10 pr-10 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all ${errors.clientName ? 'border-red-500' : 'border-stone-100'}`}
+                  {...register('clientName')}
+                />
+              </div>
+              {errors.clientName && (
+                <p className="mt-1.5 text-xs font-medium text-red-500">{t('checkout.errors.name', locale)}</p>
+              )}
+            </div>
+
+            <div className="relative">
+              <label htmlFor="clientPhone" className="mb-1.5 block text-sm font-bold text-stone-700">
+                {t('checkout.phone', locale)} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className={`absolute inset-y-0 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} flex items-center pointer-events-none`}>
+                  <Phone className="h-5 w-5 text-stone-400" />
+                </div>
+                <input
+                  id="clientPhone"
+                  type="tel"
+                  placeholder="05XXXXXXXX"
+                  inputMode="numeric"
+                  dir="ltr"
+                  className={`input-bm pl-10 pr-10 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
+                  {...register('clientPhone')}
+                />
+              </div>
+              {errors.clientPhone && (
+                <p className="mt-1.5 text-xs font-medium text-red-500">{t('checkout.errors.phone', locale)}</p>
+              )}
+            </div>
+
+            <div className="relative">
+              <label htmlFor="clientAddress" className="mb-1.5 block text-sm font-bold text-stone-700">
+                {t('checkout.address', locale)} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className={`absolute top-4 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} pointer-events-none`}>
+                  <MapPin className="h-5 w-5 text-stone-400" />
+                </div>
+                <textarea
+                  id="clientAddress"
+                  placeholder={t('checkout.address', locale)}
+                  rows={3}
+                  className={`input-bm pl-10 pr-10 pt-4 w-full bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all resize-none ${errors.clientAddress ? 'border-red-500' : 'border-stone-100'}`}
+                  {...register('clientAddress')}
+                />
+              </div>
+              {errors.clientAddress && (
+                <p className="mt-1.5 text-xs font-medium text-red-500">{t('checkout.errors.address', locale)}</p>
+              )}
+            </div>
+
+            <div className="relative">
+              <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-stone-700">
+                {t('checkout.notes', locale)}
+              </label>
+              <div className="relative">
+                <div className={`absolute inset-y-0 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} flex items-center pointer-events-none`}>
+                  <FileText className="h-5 w-5 text-stone-400" />
+                </div>
+                <input
+                  id="notes"
+                  type="text"
+                  placeholder={t('checkout.notes', locale)}
+                  className={`input-bm pl-10 pr-10 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all border-stone-100`}
+                  {...register('notes')}
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="clientPhone" className="mb-1.5 block text-sm font-semibold text-stone-700">
-              Téléphone
-            </label>
-            <input
-              id="clientPhone"
-              type="tel"
-              placeholder="05XXXXXXXX"
-              inputMode="numeric"
-              className={`input-bm ${errors.clientPhone ? 'input-bm-error' : ''}`}
-              {...register('clientPhone')}
-            />
-            {errors.clientPhone && (
-              <p className="mt-1 text-xs text-bm-secondary">{errors.clientPhone.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="clientAddress" className="mb-1.5 block text-sm font-semibold text-stone-700">
-              Adresse de livraison
-            </label>
-            <textarea
-              id="clientAddress"
-              placeholder="Votre adresse complète (rue, quartier, immeuble...)"
-              rows={3}
-              className={`input-bm resize-none ${errors.clientAddress ? 'input-bm-error' : ''}`}
-              {...register('clientAddress')}
-            />
-            {errors.clientAddress && (
-              <p className="mt-1 text-xs text-bm-secondary">{errors.clientAddress.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="notes" className="mb-1.5 block text-sm font-semibold text-stone-700">
-              Notes (optionnel)
-            </label>
-            <input
-              id="notes"
-              type="text"
-              placeholder="Instructions spéciales..."
-              className={`input-bm ${errors.notes ? 'input-bm-error' : ''}`}
-              {...register('notes')}
-            />
-            {errors.notes && (
-              <p className="mt-1 text-xs text-bm-secondary">{errors.notes.message}</p>
-            )}
-          </div>
-
-          <div className="rounded-xl bg-white p-4 shadow-sm border border-stone-100">
-            <h3 className="mb-3 text-sm font-semibold text-stone-700 uppercase tracking-wider">
-              Récapitulatif
+          <div className="rounded-3xl bg-white p-5 shadow-sm border border-stone-100/50">
+            <h3 className="mb-4 text-base font-bold text-stone-900 border-b border-stone-100 pb-3">
+              {t('checkout.summary', locale)}
             </h3>
-            <div className="space-y-2 mb-3">
+            <div className="space-y-3 mb-4">
               {groupedItems.map((group) => (
                 <div key={group.item.product.id}>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-stone-800 font-medium">
-                      {group.item.quantity}× {group.item.product.name}
+                  <div className="flex justify-between items-start text-sm">
+                    <span className="text-stone-800 font-bold flex gap-2">
+                      <span className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-xs text-stone-500">{group.item.quantity}</span>
+                      <span className="mt-0.5">{isRTL && group.item.product.nameAr ? group.item.product.nameAr : group.item.product.name}</span>
                     </span>
-                    <span className="text-stone-800 font-medium">
+                    <span className="text-stone-900 font-bold mt-0.5">
                       {formatPrice(group.item.product.price * group.item.quantity)}
                     </span>
                   </div>
-                  {group.supplements.map((supp) => (
-                    <div
-                      key={`${supp.product.id}-${supp.attachedToProductId}`}
-                      className="flex justify-between text-sm pl-4 mt-0.5"
-                    >
-                      <span className="text-stone-500">
-                        <span className="text-bm-accent-500 mr-1">├</span>
-                        {supp.quantity}× {supp.product.name}
-                        <span className="text-stone-400 ml-1">(suppl.)</span>
-                      </span>
-                      <span className="text-stone-500">
-                        {formatPrice(supp.product.price * supp.quantity)}
-                      </span>
+                  {group.supplements.length > 0 && (
+                    <div className={`mt-1.5 space-y-1.5 ${isRTL ? 'pr-8' : 'pl-8'}`}>
+                      {group.supplements.map((supp) => (
+                        <div
+                          key={`${supp.product.id}-${supp.attachedToProductId}`}
+                          className="flex justify-between items-center text-xs"
+                        >
+                          <span className="text-stone-500 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-bm-accent"></span>
+                            <span className="font-medium">{supp.quantity}× {isRTL && supp.product.nameAr ? supp.product.nameAr : supp.product.name}</span>
+                            <span className="bg-stone-100 px-1.5 py-0.5 rounded text-[9px]">{t('cart.suppl', locale)}</span>
+                          </span>
+                          <span className="text-stone-600 font-medium">
+                            {formatPrice(supp.product.price * supp.quantity)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               ))}
             </div>
-            <div className="border-t border-stone-100 pt-2 space-y-1">
-              <div className="flex justify-between text-sm text-stone-600">
-                <span>Sous-total</span>
+            
+            <div className="border-t border-stone-100 pt-4 space-y-2">
+              <div className="flex justify-between text-sm text-stone-600 font-medium">
+                <span>{t('checkout.subtotal', locale)}</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm text-stone-600">
+              <div className="flex justify-between text-sm text-stone-600 font-medium">
                 <span>
-                  Livraison ({selectedZone.name})
-                  {isNightDelivery && <span className="ml-1 text-xs text-bm-accent-500">🌙</span>}
+                  {t('checkout.delivery', locale)} ({selectedZone.name})
+                  {isNightDelivery && <span className="mx-1 text-[10px] text-bm-accent font-bold bg-bm-accent-50 px-1.5 py-0.5 rounded-md">🌙 {t('cart.night', locale)}</span>}
                 </span>
                 <span>{formatPrice(deliveryFee)}</span>
               </div>
-              <div className="border-t border-stone-100 pt-2">
-                <div className="flex justify-between text-base font-bold">
-                  <span>Total</span>
-                  <span className="text-bm-primary">{formatPrice(total)}</span>
+              <div className="border-t border-stone-100 pt-3 mt-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-lg font-bold text-stone-900">{t('checkout.total', locale)}</span>
+                  <span className="text-2xl font-black text-bm-primary">{formatPrice(total)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {submitError && (
-            <div className="rounded-xl bg-bm-secondary-50 border border-bm-secondary-100 p-3">
-              <p className="text-sm text-bm-secondary">{submitError}</p>
+            <div className="rounded-2xl bg-red-50 border border-red-100 p-4">
+              <p className="text-sm font-bold text-red-600 text-center">{submitError}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={submitting}
-            className="btn-bm btn-bm-primary btn-bm-lg block w-full text-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex items-center justify-center gap-2 w-full h-14 rounded-full font-bold text-lg transition-all shadow-xl ${
+              submitting
+                ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                : 'bg-bm-primary text-stone-900 hover:brightness-105 active:scale-95 shadow-bm-primary/30'
+            }`}
           >
             {submitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-stone-900 border-t-transparent" />
-                Envoi en cours...
-              </span>
+              <>
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-stone-400 border-t-stone-600" />
+                {t('checkout.sending', locale)}
+              </>
             ) : (
-              `Confirmer - ${formatPrice(total)}`
+              <>
+                <Check className="w-5 h-5" />
+                {t('checkout.confirm', locale)} - {formatPrice(total)}
+              </>
             )}
           </button>
+          
+          <div className="h-8"></div>
         </form>
       </div>
 
       {pendingModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-t-2xl bg-white p-6 shadow-2xl safe-bottom">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-bm-accent-50">
-                <svg className="h-6 w-6 text-bm-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                </svg>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl safe-bottom animate-in slide-in-from-bottom-10" dir={isRTL ? 'rtl' : 'ltr'}>
+            <div className="mb-6 flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bm-accent-50 text-bm-accent">
+                <FileText className="h-7 w-7" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-stone-800">Commande en attente</h3>
-                <p className="text-sm text-stone-500">Vous avez déjà une commande en cours</p>
+                <h3 className="text-lg font-bold text-stone-900">{t('checkout.pendingTitle', locale)}</h3>
+                <p className="text-sm font-medium text-stone-500">{t('checkout.pendingDesc', locale)}</p>
               </div>
             </div>
 
-            <div className="mb-4 rounded-xl bg-stone-50 p-3">
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Statut</span>
-                  <span className="font-medium text-bm-accent-500">
+            <div className="mb-6 rounded-2xl bg-stone-50 border border-stone-100 p-4">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-stone-500 font-medium">{t('checkout.status', locale)}</span>
+                  <span className="font-bold text-bm-accent bg-bm-accent-50 px-2.5 py-1 rounded-lg">
                     {pendingModal.existingOrder.status === 'CALLING'
-                      ? 'Appel en cours'
-                      : 'En attente'}
+                      ? t('checkout.calling', locale)
+                      : t('checkout.waiting', locale)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Total</span>
-                  <span className="font-medium">
+                <div className="flex justify-between items-center">
+                  <span className="text-stone-500 font-medium">{t('checkout.total', locale)}</span>
+                  <span className="font-bold text-stone-900">
                     {formatPrice(pendingModal.existingOrder.total)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Articles</span>
-                  <span className="font-medium">
+                <div className="flex justify-between items-start">
+                  <span className="text-stone-500 font-medium whitespace-nowrap mt-0.5">{t('checkout.items', locale)}</span>
+                  <span className="font-bold text-stone-800 text-right">
                     {pendingModal.existingOrder.items
                       .map((i) => `${i.quantity}× ${i.name}`)
                       .join(', ')}
@@ -412,29 +435,29 @@ export default function CheckoutPage() {
             <div className="space-y-3">
               <button
                 onClick={handleModifyExisting}
-                className="btn-bm btn-bm-outline btn-bm-lg block w-full text-center"
+                className="w-full h-12 rounded-xl font-bold text-stone-900 bg-bm-primary/10 hover:bg-bm-primary/20 transition-colors"
               >
-                Modifier cette commande
+                {t('checkout.modifyOrder', locale)}
               </button>
               <button
                 onClick={handleCancelAndCreate}
                 disabled={pendingAction === 'create'}
-                className="btn-bm btn-bm-secondary btn-bm-lg block w-full text-center disabled:opacity-50"
+                className="w-full h-12 rounded-xl font-bold text-white bg-stone-900 hover:bg-stone-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {pendingAction === 'create' ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Création...
-                  </span>
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    {t('checkout.creating', locale)}
+                  </>
                 ) : (
-                  'Créer une nouvelle commande'
+                  t('checkout.newOrder', locale)
                 )}
               </button>
               <button
                 onClick={() => setPendingModal(null)}
-                className="btn-bm btn-bm-ghost block w-full text-center"
+                className="w-full h-12 rounded-xl font-bold text-stone-500 hover:bg-stone-100 transition-colors mt-2"
               >
-                Annuler
+                {t('checkout.cancel', locale)}
               </button>
             </div>
           </div>

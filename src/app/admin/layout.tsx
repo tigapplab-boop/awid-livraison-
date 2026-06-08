@@ -157,7 +157,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = useCallback(() => {
     localStorage.removeItem('bm_token')
     localStorage.removeItem('bm_user')
-    window.location.href = '/login'
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    window.location.href = '/login?kicked=1'
   }, [])
 
   // Login page doesn't need the layout
@@ -195,13 +196,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 bg-stone-50">
         {/* Top Bar (mobile) */}
-        <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-stone-200 shadow-sm">
+        <header className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-stone-200/50 shadow-sm">
           <div className="flex items-center justify-between px-4 h-16">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
+              className="p-2 rounded-xl hover:bg-stone-100 transition-colors"
               aria-label="Ouvrir le menu"
             >
               <Menu className="h-6 w-6 text-stone-700" />
@@ -223,9 +224,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Top Bar (desktop) */}
-        <header className="hidden lg:flex items-center justify-between px-6 h-16 bg-white border-b border-stone-200 shadow-sm">
+        <header className="hidden lg:flex items-center justify-between px-6 h-16 bg-white/80 backdrop-blur-xl border-b border-stone-200/50 shadow-sm">
           <div>
-            <h2 className="text-lg font-bold text-stone-900">
+            <h2 className="text-xl font-black text-stone-900 tracking-tight">
               {NAV_ITEMS.find((i) => pathname === i.href || pathname.startsWith(i.href + '/'))?.label || 'Administration'}
             </h2>
           </div>

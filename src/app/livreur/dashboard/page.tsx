@@ -457,21 +457,21 @@ export default function LivreurDashboard() {
   // ========================================
 
   return (
-    <div className="min-h-screen bg-bm-bg flex flex-col">
+    <div className="min-h-screen bg-stone-50 flex flex-col">
       {/* ===== Top Bar ===== */}
-      <header className="bg-white border-b border-stone-200 sticky top-0 z-30">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-stone-200/50 sticky top-0 z-30">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-bm-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-bm-primary shadow-md shadow-bm-primary/20 flex items-center justify-center">
               <Bike className="w-5 h-5 text-stone-900" />
             </div>
             <div>
-              <p className="font-bold text-stone-900 text-sm">{user.name}</p>
-              <p className="text-xs text-stone-500">Livreur</p>
+              <p className="font-black text-stone-900 text-base leading-tight">{user.name}</p>
+              <p className="text-xs font-medium text-stone-500">Livreur</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Available toggle */}
             <button
               onClick={() => setIsAvailable(!isAvailable)}
@@ -522,16 +522,16 @@ export default function LivreurDashboard() {
       </header>
 
       {/* ===== Tabs ===== */}
-      <nav className="bg-white border-b border-stone-200 sticky top-[57px] z-20">
+      <nav className="bg-white/80 backdrop-blur-xl border-b border-stone-200/50 sticky top-[65px] z-20">
         <div className="max-w-lg mx-auto flex">
           {tabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-semibold transition-colors relative min-h-[48px] ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-bold transition-all relative min-h-[48px] ${
                 activeTab === tab.key
                   ? 'text-bm-primary'
-                  : 'text-stone-400 hover:text-stone-600'
+                  : 'text-stone-400 hover:text-stone-700'
               }`}
             >
               {tab.label}

@@ -8,7 +8,10 @@ import { getTempOrder, updateTempOrder, getProducts, getZones, calculateFee } fr
 import { useCart, isSupplement } from '@/bm/lib/cart';
 import type { CategoryWithProducts, DeliveryZone, FeeCalculation, OrderTempRedis, Product, TempOrderItemDto, CartItem } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
+import { useLocale } from '@/bm/lib/locale';
+import { t } from '@/bm/lib/i18n';
 import SupplementPicker from '@/components/SupplementPicker';
+import { ChevronLeft, ChevronRight, Check, X, Minus, Plus } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Nos Burgers': '🍔',
@@ -21,6 +24,7 @@ function ModifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const { locale, isRTL, isMounted } = useLocale();
 
   const {
     items,
@@ -51,7 +55,7 @@ function ModifyContent() {
   useEffect(() => {
     async function loadOrder() {
       if (!token) {
-        setError('Token manquant');
+        setError(isRTL ? 'الرمز مفقود' : 'Token manquant');
         setLoading(false);
         return;
       }
@@ -86,13 +90,11 @@ function ModifyContent() {
           setZone(matchingZone, feeCalc);
         }
 
-        // Clear cart first, then load order items
         clearCart();
 
         const allProducts: Product[] = productsData.flatMap((c) => c.products);
         const productMap = new Map(allProducts.map((p) => [p.id, p]));
 
-        // First add non-supplement items, then supplements with their attachments
         const mainItems = order.items.filter((item) => {
           const product = productMap.get(item.productId);
           return product && !isSupplement(product);
@@ -103,7 +105,6 @@ function ModifyContent() {
           return product && isSupplement(product);
         });
 
-        // Add main items first
         for (const item of mainItems) {
           const product = productMap.get(item.productId);
           if (product) {
@@ -111,11 +112,9 @@ function ModifyContent() {
           }
         }
 
-        // Then add supplements with attachment info from notes
         for (const item of supplementItems) {
           const product = productMap.get(item.productId);
           if (product) {
-            // Try to find the attached burger from notes (format: "Pour [burger name]")
             let attachedToProductId: string | undefined;
             if (item.notes) {
               const match = item.notes.match(/Pour\s+(.+)/);
@@ -134,15 +133,14 @@ function ModifyContent() {
           }
         }
       } catch {
-        setError('Commande introuvable ou expirée');
+        setError(isRTL ? 'الطلب غير موجود أو منتهي الصلاحية' : 'Commande introuvable ou expirée');
       } finally {
         setLoading(false);
       }
     }
     loadOrder();
-  }, [token, addItem, setZone, clearCart]);
+  }, [token, addItem, setZone, clearCart, isRTL]);
 
-  // Scroll spy
   useEffect(() => {
     if (loading || categories.length === 0) return;
 
@@ -203,7 +201,7 @@ function ModifyContent() {
   const handleAddSupplement = useCallback((product: Product) => {
     const burgersInCart = items.filter((item) => !item.attachedToProductId);
     if (burgersInCart.length === 0) {
-      setToastMessage('Ajoutez d\'abord un burger avant de choisir un supplément');
+      setToastMessage(isRTL ? 'أضف برجر أولاً قبل اختيار الإضافة' : 'Ajoutez d\'abord un burger avant de choisir un supplément');
       return;
     }
     if (burgersInCart.length === 1) {
@@ -212,7 +210,7 @@ function ModifyContent() {
     }
     setPendingSupplement(product);
     setSupplementPickerOpen(true);
-  }, [items, addItem]);
+  }, [items, addItem, isRTL]);
 
   const handleSupplementSelect = useCallback((attachedToProductId: string) => {
     if (pendingSupplement) {
@@ -257,7 +255,6 @@ function ModifyContent() {
     }
   }, [token, selectedZone, items, existingOrder, router]);
 
-  // Group items for display
   const groupedItems = useMemo(() => {
     const mainItems = items.filter((item) => !item.attachedToProductId);
     const result: Array<{
@@ -276,9 +273,11 @@ function ModifyContent() {
     return result;
   }, [items]);
 
+  if (!isMounted) return null;
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-stone-50">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-bm-primary border-t-transparent" />
       </div>
     );
@@ -286,89 +285,102 @@ function ModifyContent() {
 
   if (error && !existingOrder) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6">
-        <svg className="mb-4 h-16 w-16 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-        </svg>
-        <p className="text-lg font-semibold text-stone-700">{error}</p>
-        <Link href="/menu" className="btn-bm btn-bm-primary btn-bm-lg mt-4">
-          Retour au menu
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center px-6 bg-stone-50" dir={isRTL ? 'rtl' : 'ltr'}>
+        <X className="mb-4 h-16 w-16 text-red-400" />
+        <p className="text-lg font-bold text-stone-700">{error}</p>
+        <Link href="/menu" className="btn-bm-lg btn-bm-primary mt-6">
+          {t('waiting.backToMenu', locale)}
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-bm-bg">
-      <header className="sticky top-0 z-40 bg-bm-primary px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Link href="/menu" className="text-stone-900" aria-label="Retour">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-            </svg>
+    <div className="flex min-h-[100dvh] flex-col bg-stone-50" dir={isRTL ? 'rtl' : 'ltr'}>
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-stone-200/50 px-4 py-4">
+        <div className="flex items-center gap-4">
+          <Link href="/menu" className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors">
+            {isRTL ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-stone-900">Modifier la commande</h1>
-            <p className="text-xs text-stone-700">Modifiez vos articles et confirmez</p>
+            <h1 className="text-xl font-bold text-stone-900 leading-none">{isRTL ? 'تعديل الطلب' : 'Modifier la commande'}</h1>
+            <p className="text-sm font-medium text-stone-500 mt-1">{isRTL ? 'قم بتعديل عناصرك وتأكيدها' : 'Modifiez vos articles et confirmez'}</p>
           </div>
         </div>
       </header>
 
       {/* Cart summary */}
       {items.length > 0 && (
-        <div className="border-b border-stone-200 bg-white px-4 py-3">
-          <h2 className="mb-2 text-sm font-semibold text-stone-700">Votre panier ({totalItems})</h2>
-          <div className="space-y-1">
+        <div className="bg-white p-5 border-b border-stone-100/50">
+          <h2 className="mb-3 text-base font-bold text-stone-900">{t('cart.title', locale)} ({totalItems})</h2>
+          <div className="space-y-3">
             {groupedItems.map((group) => (
-              <div key={group.item.product.id}>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-stone-800">
-                    {group.item.quantity}× {group.item.product.name}
-                  </span>
-                  <div className="flex items-center gap-1 ml-auto">
+              <div key={group.item.product.id} className="bg-stone-50 rounded-2xl p-3 border border-stone-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <span className="text-sm font-bold text-stone-800">
+                      {isRTL && group.item.product.nameAr ? group.item.product.nameAr : group.item.product.name}
+                    </span>
+                    <p className="text-sm font-bold text-bm-primary mt-0.5">{formatPrice(group.item.product.price * group.item.quantity)}</p>
+                  </div>
+                  <div className={`flex items-center gap-1.5 bg-white rounded-full p-1 border border-stone-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <button
                       onClick={() =>
                         group.item.quantity <= 1
                           ? removeItem(group.item.product.id)
                           : updateQuantity(group.item.product.id, group.item.quantity - 1)
                       }
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-xs font-bold text-stone-600"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-50 text-stone-600 hover:text-stone-900"
                     >
-                      {group.item.quantity <= 1 ? '×' : '−'}
+                      {group.item.quantity <= 1 ? <X className="h-3 w-3 text-red-500" /> : <Minus className="h-3 w-3" />}
                     </button>
+                    <span className="w-5 text-center text-xs font-bold text-stone-900">{group.item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(group.item.product.id, group.item.quantity + 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-xs font-bold text-stone-600"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-50 text-stone-600 hover:text-stone-900"
                     >
-                      +
+                      <Plus className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
-                {group.supplements.map((supp) => (
-                  <div key={`${supp.product.id}-${supp.attachedToProductId}`} className="flex items-center gap-2 pl-4">
-                    <span className="text-xs text-stone-500">
-                      ├ {supp.quantity}× {supp.product.name} (suppl.)
-                    </span>
-                    <div className="flex items-center gap-1 ml-auto">
-                      <button
-                        onClick={() =>
-                          supp.quantity <= 1
-                            ? removeItem(supp.product.id)
-                            : updateQuantity(supp.product.id, supp.quantity - 1)
-                        }
-                        className="flex h-5 w-5 items-center justify-center rounded-full bg-stone-100 text-[10px] font-bold text-stone-500"
-                      >
-                        {supp.quantity <= 1 ? '×' : '−'}
-                      </button>
-                      <button
-                        onClick={() => updateQuantity(supp.product.id, supp.quantity + 1)}
-                        className="flex h-5 w-5 items-center justify-center rounded-full bg-stone-100 text-[10px] font-bold text-stone-500"
-                      >
-                        +
-                      </button>
-                    </div>
+                {group.supplements.length > 0 && (
+                  <div className={`mt-2 space-y-2 ${isRTL ? 'mr-2 pr-3 border-r-2 border-bm-accent-100' : 'ml-2 pl-3 border-l-2 border-bm-accent-100'}`}>
+                    {group.supplements.map((supp) => (
+                      <div key={`${supp.product.id}-${supp.attachedToProductId}`} className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-stone-600">
+                              {isRTL && supp.product.nameAr ? supp.product.nameAr : supp.product.name}
+                            </span>
+                            <span className="shrink-0 rounded-full bg-bm-accent-50 px-1.5 py-0.5 text-[9px] font-bold text-bm-accent uppercase">
+                              {t('cart.suppl', locale)}
+                            </span>
+                          </div>
+                          <p className="text-xs font-bold text-stone-500 mt-0.5">{formatPrice(supp.product.price * supp.quantity)}</p>
+                        </div>
+                        <div className={`flex items-center gap-1 bg-white rounded-full p-0.5 border border-stone-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                          <button
+                            onClick={() =>
+                              supp.quantity <= 1
+                                ? removeItem(supp.product.id)
+                                : updateQuantity(supp.product.id, supp.quantity - 1)
+                            }
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-50 text-stone-500"
+                          >
+                            {supp.quantity <= 1 ? <X className="h-3 w-3 text-red-400" /> : <Minus className="h-3 w-3" />}
+                          </button>
+                          <span className="w-4 text-center text-[10px] font-bold text-stone-800">{supp.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(supp.product.id, supp.quantity + 1)}
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-50 text-stone-500"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             ))}
           </div>
@@ -377,17 +389,17 @@ function ModifyContent() {
 
       {/* Zone selector */}
       {zones.length > 0 && (
-        <div className="border-b border-stone-200 bg-white px-4 py-3">
-          <h2 className="mb-2 text-sm font-semibold text-stone-700">Zone de livraison</h2>
+        <div className="bg-white p-5 border-b border-stone-100/50 mt-2">
+          <h2 className="mb-3 text-base font-bold text-stone-900">{t('cart.deliveryZone', locale)}</h2>
           <div className="flex flex-wrap gap-2">
             {zones.map((zone) => (
               <button
                 key={zone.id}
                 onClick={() => handleZoneChange(zone.id)}
-                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all border-2 ${
                   selectedZone?.id === zone.id
-                    ? 'bg-bm-primary text-stone-900'
-                    : 'bg-stone-100 text-stone-600'
+                    ? 'border-bm-primary bg-bm-primary-50/50 text-stone-900'
+                    : 'border-stone-100 bg-white text-stone-600 hover:border-stone-200'
                 }`}
               >
                 {zone.name}
@@ -399,18 +411,20 @@ function ModifyContent() {
 
       {/* Category nav */}
       {categories.length > 0 && (
-        <div className="sticky top-[52px] z-30 backdrop-blur-sm border-b border-stone-100 bg-bm-bg/95">
-          <div className="category-tabs">
+        <div className="sticky top-[73px] z-30 bg-white/90 backdrop-blur-xl border-b border-stone-100/50 pb-2 pt-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 px-4 w-max">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => scrollToSection(category.id)}
-                className={`category-tab ${
-                  activeSection === category.id ? 'category-tab-active' : 'category-tab-inactive'
+                className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-bold transition-all whitespace-nowrap ${
+                  activeSection === category.id 
+                    ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' 
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 }`}
               >
-                <span className="mr-1">{CATEGORY_ICONS[category.name] || '🍽️'}</span>
-                {category.name}
+                <span>{CATEGORY_ICONS[category.name] || '🍽️'}</span>
+                <span>{isRTL && category.nameAr ? category.nameAr : category.name}</span>
               </button>
             ))}
           </div>
@@ -418,7 +432,7 @@ function ModifyContent() {
       )}
 
       {/* Products */}
-      <div className="flex-1 pb-40 px-4 py-4 space-y-6">
+      <div className="flex-1 pb-40 px-4 py-6 space-y-8">
         {categories.map((category) => {
           const sectionEl = (ref: HTMLElement | null) => { sectionRefs.current[category.id] = ref; };
           return (
@@ -427,14 +441,14 @@ function ModifyContent() {
               ref={sectionEl}
               id={`section-modify-${category.id}`}
             >
-              <div className="category-section-header mb-3 flex items-center gap-2">
-                <span className="text-xl">{CATEGORY_ICONS[category.name] || '🍽️'}</span>
-                <h2 className="text-lg font-extrabold text-stone-800 tracking-tight">
-                  {category.name}
+              <div className="mb-4 flex items-center gap-2">
+                <span className="text-2xl">{CATEGORY_ICONS[category.name] || '🍽️'}</span>
+                <h2 className="text-xl font-black text-stone-900 tracking-tight">
+                  {isRTL && category.nameAr ? category.nameAr : category.name}
                 </h2>
               </div>
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {category.products.map((product) => {
                   const cartItemsForProduct = items.filter((i) => i.product.id === product.id);
                   const totalQuantity = cartItemsForProduct.reduce((sum, i) => sum + i.quantity, 0);
@@ -458,71 +472,66 @@ function ModifyContent() {
                   };
 
                   return (
-                    <div key={product.id} className="menu-product-card flex gap-3">
-                      <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-bm-primary-50 to-bm-accent-50">
+                    <div key={product.id} className="group relative flex gap-3 rounded-3xl bg-white p-3 shadow-sm border border-stone-100/50 transition-all hover:border-bm-primary/50 hover:shadow-xl hover:shadow-bm-primary/5">
+                      <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-bm-primary-50 to-bm-accent-50/30">
                         {product.image ? (
-                          <img src={product.image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
+                          <img src={product.image} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                         ) : (
-                          <span className="text-3xl">{CATEGORY_ICONS[category.name] || '🍽️'}</span>
+                          <span className="text-4xl">{CATEGORY_ICONS[category.name] || '🍽️'}</span>
                         )}
                         {totalQuantity > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-bm-primary text-[10px] font-bold text-stone-900 shadow-sm">
+                          <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-stone-900 text-xs font-bold text-white shadow-lg shadow-stone-900/30 ring-2 ring-white">
                             {totalQuantity}
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-1 flex-col justify-between py-0.5 min-w-0">
-                        <div>
-                          <div className="mb-1 flex items-start justify-between gap-2">
-                            <h3 className="text-sm font-bold text-stone-800 leading-tight">{product.name}</h3>
+                      
+                      <div className="flex flex-1 flex-col py-1 min-w-0">
+                        <div className="mb-auto">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-base font-bold text-stone-900 leading-tight">
+                              {isRTL && product.nameAr ? product.nameAr : product.name}
+                            </h3>
                             {isSupplement(product) && (
-                              <span className="shrink-0 rounded-full bg-bm-accent-50 px-2 py-0.5 text-[10px] font-semibold text-bm-accent-500 uppercase tracking-wide">
-                                Suppl.
+                              <span className="shrink-0 rounded-full bg-bm-accent-50 px-2 py-0.5 text-[10px] font-bold text-bm-accent uppercase tracking-wider">
+                                {t('cart.suppl', locale)}
                               </span>
                             )}
                           </div>
                           {product.description && (
-                            <p className="mb-1 text-xs text-stone-500 leading-snug line-clamp-2">{product.description}</p>
+                            <p className="mt-1 text-xs font-medium text-stone-500 leading-snug line-clamp-2">{product.description}</p>
                           )}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-base font-bold text-bm-primary">{formatPrice(product.price)}</span>
+                        
+                        <div className="flex items-end justify-between mt-2">
+                          <span className="text-lg font-black text-bm-primary">{formatPrice(product.price)}</span>
                           {totalQuantity > 0 ? (
-                            <div className="flex items-center gap-1.5">
+                            <div className={`flex items-center gap-1.5 bg-stone-50 rounded-full p-1 border border-stone-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
                               <button
                                 onClick={handleDecrease}
-                                className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-bm-primary text-bm-primary transition-colors active:bg-bm-primary-50"
-                                aria-label="Diminuer"
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-stone-600 shadow-sm"
                               >
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  {primaryCartItem && primaryCartItem.quantity <= 1 ? (
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                  ) : (
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
-                                  )}
-                                </svg>
+                                {primaryCartItem && primaryCartItem.quantity <= 1 ? (
+                                  <X className="h-3.5 w-3.5 text-red-500" />
+                                ) : (
+                                  <Minus className="h-3.5 w-3.5" />
+                                )}
                               </button>
-                              <span className="w-6 text-center text-xs font-bold text-stone-800">{totalQuantity}</span>
+                              <span className="w-5 text-center text-sm font-bold text-stone-900">{totalQuantity}</span>
                               <button
                                 onClick={() => addItem(product)}
-                                className="flex h-7 w-7 items-center justify-center rounded-full bg-bm-primary text-stone-900 shadow-sm transition-transform active:scale-90"
-                                aria-label="Augmenter"
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-stone-600 shadow-sm"
                               >
-                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                </svg>
+                                <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={handleAdd}
-                              className="flex h-8 items-center gap-1 rounded-full bg-bm-primary px-3 text-xs font-semibold text-stone-900 shadow-sm transition-transform active:scale-90"
-                              aria-label={`Ajouter ${product.name}`}
+                              className="flex h-9 items-center justify-center rounded-full bg-stone-900 px-4 text-xs font-bold text-white shadow-lg shadow-stone-900/20 transition-all active:scale-95"
                             >
-                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                              </svg>
-                              Ajouter
+                              <Plus className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                              {t('menu.addToCart', locale)}
                             </button>
                           )}
                         </div>
@@ -538,38 +547,45 @@ function ModifyContent() {
 
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed left-4 right-4 top-20 z-50 animate-in slide-in-from-top-2 rounded-xl bg-stone-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
-          <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 shrink-0 text-bm-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
-            {toastMessage}
+        <div className="fixed left-4 right-4 top-24 z-50 animate-in slide-in-from-top-2 rounded-2xl bg-stone-900 px-4 py-3 shadow-2xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bm-accent/20">
+              <span className="text-bm-accent">ℹ</span>
+            </div>
+            <p className="text-sm font-bold text-white">{toastMessage}</p>
           </div>
         </div>
       )}
 
       {/* Bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-stone-200 bg-white px-4 py-3 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-stone-50 via-stone-50 to-transparent z-40 pb-safe-bottom">
         <div className="mx-auto max-w-lg">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-stone-600">
-              {totalItems} article{totalItems > 1 ? 's' : ''} + livraison
+          <div className="mb-3 flex items-center justify-between px-2">
+            <span className="text-sm font-bold text-stone-600 bg-white px-3 py-1 rounded-full shadow-sm">
+              {totalItems} {totalItems > 1 ? t('cart.articles', locale) : t('cart.article', locale)} + {t('cart.delivery', locale)}
             </span>
-            <span className="text-lg font-bold text-bm-primary">{formatPrice(total)}</span>
+            <span className="text-xl font-black text-bm-primary drop-shadow-sm">{formatPrice(total)}</span>
           </div>
-          {error && <p className="mb-2 text-xs text-bm-secondary">{error}</p>}
+          {error && <p className="mb-3 text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-xl text-center">{error}</p>}
           <button
             onClick={handleSubmit}
             disabled={submitting || items.length === 0 || !selectedZone}
-            className="btn-bm btn-bm-primary btn-bm-lg block w-full text-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex items-center justify-center gap-2 h-14 w-full rounded-full font-bold text-lg transition-all shadow-xl ${
+              submitting || items.length === 0 || !selectedZone
+                ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                : 'bg-bm-primary text-stone-900 hover:brightness-105 active:scale-95 shadow-bm-primary/30'
+            }`}
           >
             {submitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-stone-900 border-t-transparent" />
-                Modification...
-              </span>
+              <>
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-stone-400 border-t-stone-600" />
+                {isRTL ? 'جاري التعديل...' : 'Modification...'}
+              </>
             ) : (
-              'Confirmer la modification'
+              <>
+                <Check className="w-5 h-5" />
+                {isRTL ? 'تأكيد التعديل' : 'Confirmer la modification'}
+              </>
             )}
           </button>
         </div>
@@ -591,7 +607,7 @@ export default function ModifyPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center">
+        <div className="flex min-h-[100dvh] items-center justify-center bg-stone-50">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-bm-primary border-t-transparent" />
         </div>
       }
