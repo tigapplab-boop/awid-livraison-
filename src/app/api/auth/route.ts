@@ -34,29 +34,32 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { phone, password, username } = body
+    const { username, password, newPassword } = body
 
-    // Accept either "phone" or "username" as identifier
-    const identifier = username || phone
-
-    if (!identifier || !password) {
+    if (!username || !password) {
       return NextResponse.json(
         { error: 'Identifiant et mot de passe requis' },
         { status: 400 }
       )
     }
 
-    // Find user by phone OR by name (for simple username login like "admin", "livreur")
-    let user = await db.user.findUnique({
-      where: { phone: identifier },
-    })
+    let user
+    // Determine if it's a phone number or a username (livreur/admin)
+    const isPhone = /^0(5|6|7)\d{8}$/.test(username)
 
-    // If not found by phone, try by name
-    if (!user) {
-      const usersByName = await db.user.findMany({
-        where: { name: identifier },
-      })
-      if (usersByName.length === 1) {
+    if (isPhone) {
+      user = await db.user.findUnique({ where: { phone: username } })
+    } else {
+      // Some generic accounts might use simple usernames like "livreur" instead of phone
+      // We stored it in phone column for simplicity in the generic model
+      user = await db.user.findUnique({ where: { phone: username } })
+      
+      // Fallback: search by name if not found by phone (for generic accounts)
+      if (!user) {
+        const usersByName = await db.user.findMany({ 
+          where: { name: username },
+          take: 1
+        })
         user = usersByName[0]
       }
     }
@@ -78,10 +81,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (user.mustChangePassword) {
-      return NextResponse.json({ 
-        error: 'Must change password', 
-        mustChangePassword: true 
-      }, { status: 403 })
+      if (!newPassword) {
+        return NextResponse.json({ 
+          error: 'Vous devez changer votre mot de passe', 
+          mustChangePassword: true 
+        }, { status: 403 })
+      }
+      
+      // Change the password
+      const hashed = await bcrypt.hash(newPassword, 10)
+      user = await db.user.update({
+        where: { id: user.id },
+        data: { password: hashed, mustChangePassword: false }
+      })
     }
 
     // Create JWT token

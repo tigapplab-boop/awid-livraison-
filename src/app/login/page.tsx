@@ -16,9 +16,11 @@ export default function UnifiedLoginPage() {
   const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(true)
+  const [newPassword, setNewPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false) // hidden by default
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [needsPasswordChange, setNeedsPasswordChange] = useState(false)
 
   useEffect(() => {
     // If already logged in, redirect based on role
@@ -54,18 +56,33 @@ export default function UnifiedLoginPage() {
       return
     }
 
+    if (needsPasswordChange && newPassword.length < 6) {
+      setError('Le nouveau mot de passe doit contenir au moins 6 caractères')
+      return
+    }
+
     setLoading(true)
     try {
+      const payload: any = { username: username.trim(), password }
+      if (needsPasswordChange && newPassword) {
+        payload.newPassword = newPassword
+      }
+
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Identifiants invalides')
+        if (data.mustChangePassword && !needsPasswordChange) {
+          setNeedsPasswordChange(true)
+          setError(null)
+        } else {
+          setError(data.error || 'Identifiants invalides')
+        }
         setLoading(false)
         return
       }
@@ -104,6 +121,14 @@ export default function UnifiedLoginPage() {
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Needs password change info message */}
+            {needsPasswordChange && !error && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span>Veuillez configurer votre nouveau mot de passe sécurisé.</span>
+              </div>
+            )}
+
             {/* Error message */}
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
@@ -125,7 +150,7 @@ export default function UnifiedLoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 className="input-bm"
                 autoComplete="username"
-                disabled={loading}
+                disabled={loading || needsPasswordChange}
                 autoFocus
               />
             </div>
@@ -133,7 +158,7 @@ export default function UnifiedLoginPage() {
             {/* Password input */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-stone-700 mb-1.5">
-                Mot de passe
+                {needsPasswordChange ? 'Mot de passe actuel' : 'Mot de passe'}
               </label>
               <div className="relative">
                 <input
@@ -144,19 +169,40 @@ export default function UnifiedLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="input-bm pr-11"
                   autoComplete="current-password"
-                  disabled={loading}
+                  disabled={loading || needsPasswordChange}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
                   tabIndex={-1}
-                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
+
+            {/* New Password input */}
+            {needsPasswordChange && (
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-bm-primary-700 mb-1.5 mt-2">
+                  Nouveau mot de passe
+                </label>
+                <div className="relative">
+                  <input
+                    id="newPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Min. 6 caractères"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="input-bm pr-11 border-bm-primary focus:ring-bm-primary"
+                    autoComplete="new-password"
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Submit button */}
             <button
@@ -169,13 +215,13 @@ export default function UnifiedLoginPage() {
                   <span className="w-5 h-5 border-2 border-stone-900 border-t-transparent rounded-full animate-spin" />
                   Connexion...
                 </span>
+              ) : needsPasswordChange ? (
+                'Confirmer et se connecter'
               ) : (
                 'Se connecter'
               )}
             </button>
           </form>
-
-
         </div>
 
         {/* Footer */}
