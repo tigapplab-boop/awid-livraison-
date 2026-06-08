@@ -1,10 +1,16 @@
+# ========================================
+# AWID / BURGER MINUTE - Docker Compose
+# Production deployment configuration
+# ========================================
+
 services:
+  # ---- Next.js Application ----
   app:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        - 'JWT_SECRET=${JWT_SECRET}'
+        - JWT_SECRET=${JWT_SECRET}
     container_name: burger-minute-app
     user: root
     labels:
@@ -20,13 +26,98 @@ services:
     env_file:
       - .env
     environment:
-      - 'DATABASE_URL=postgresql://burger:burger_secret@db:5432/burger_minute'
-      - 'UPLOAD_DIR=/app/upload'
+      - DATABASE_URL=postgresql://burger:burger_secret@db:5432/burger_minute
+      - UPLOAD_DIR=/app/upload
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      - 'uploads_data:/app/upload'
+      - uploads_data:/app/upload
     restart: unless-stopped
+    networks:
+      - burger-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ---- Socket.IO Service ----
+  socket-service:
+    build:
+      context: ./mini-services/socket-service
+      dockerfile: Dockerfile
+    container_name: burger-minute-socket
+    environment:
+      - PORT=3003
+      - EMIT_PORT=3004
+      - API_URL=http://app:3000
+      - EMIT_SECRET=${EMIT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    expose:
+      - "3003"
+      - "3004"
+    restart: unless-stopped
+    networks:
+      - burger-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:3004/ | grep error || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ---- Redis ----
+  redis:
+    image: redis:7-alpine
+    container_name: burger-minute-redis
+    command: /bin/sh -c 'redis-server --requirepass "$${REDIS_PASSWORD:-burgerm1nute}" --appendonly yes'
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-burgerm1nute}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD:-burgerm1nute}\" ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - burger-network
+
+  # ---- PostgreSQL Database ----
+  db:
+    image: postgres:16-alpine
+    container_name: burger-minute-db
+    environment:
+      POSTGRES_DB: burger_minute
+      POSTGRES_USER: burger
+      POSTGRES_PASSWORD: burger_secret
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U burger -d burger_minute"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - burger-network
+
+# ---- Volumes ----
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ---- Network ----
+networks:
+  burger-network:
+    driver: bridge
