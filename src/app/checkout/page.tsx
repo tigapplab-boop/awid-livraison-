@@ -16,8 +16,8 @@ import { ChevronLeft, ChevronRight, Phone, MapPin, User, FileText, Check } from 
 
 const checkoutSchema = z.object({
   clientName: z.string().min(3, 'Minimum 3 caractères').max(100),
-  clientPhone: z.string().regex(/^0[5-7][0-9]{8}$/, 'Numéro invalide (05/06/07)'),
-  clientAddress: z.string().min(15, 'Minimum 15 caractères').max(500),
+  clientPhone: z.string().regex(/^(\+213[567][0-9]{8}|0[567][0-9]{8})$/, 'Numéro invalide (05/06/07 ou +213)'),
+  clientAddress: z.string().min(1, 'Adresse requise').max(500),
   notes: z.string().max(500).optional(),
 });
 
@@ -93,8 +93,14 @@ export default function CheckoutPage() {
 
   const createNewOrder = useCallback(
     async (data: CheckoutFormData) => {
+      // Normaliser le numéro: ajouter +213 si commence par 0
+      let normalizedPhone = data.clientPhone;
+      if (normalizedPhone.startsWith('0')) {
+        normalizedPhone = '+213' + normalizedPhone.substring(1);
+      }
+
       const dto: CreateTempOrderDto = {
-        clientPhone: data.clientPhone,
+        clientPhone: normalizedPhone,
         clientName: data.clientName,
         clientAddress: data.clientAddress,
         deliveryZone: selectedZone!.id,
@@ -125,7 +131,13 @@ export default function CheckoutPage() {
       setSubmitError(null);
 
       try {
-        const pendingCheck = await checkPendingOrder(data.clientPhone);
+        // Normaliser le numéro pour la vérification
+        let normalizedPhone = data.clientPhone;
+        if (normalizedPhone.startsWith('0')) {
+          normalizedPhone = '+213' + normalizedPhone.substring(1);
+        }
+
+        const pendingCheck = await checkPendingOrder(normalizedPhone);
 
         if (pendingCheck.hasPending && pendingCheck.order) {
           setPendingModal({
@@ -157,8 +169,14 @@ export default function CheckoutPage() {
     setPendingAction('create');
 
     try {
+      // Normaliser le numéro
+      let normalizedPhone = pendingModal.formData.clientPhone;
+      if (normalizedPhone.startsWith('0')) {
+        normalizedPhone = '+213' + normalizedPhone.substring(1);
+      }
+
       const dto: CreateTempOrderDto = {
-        clientPhone: pendingModal.formData.clientPhone,
+        clientPhone: normalizedPhone,
         clientName: pendingModal.formData.clientName,
         clientAddress: pendingModal.formData.clientAddress,
         deliveryZone: selectedZone!.id,
@@ -246,9 +264,9 @@ export default function CheckoutPage() {
                 <input
                   id="clientPhone"
                   type="tel"
-                  placeholder="05XXXXXXXX"
+                  placeholder="+213 5XXXXXXXX ou 05XXXXXXXX"
                   inputMode="numeric"
-                  maxLength={10}
+                  maxLength={16}
                   dir="ltr"
                   className={`input-bm pl-12 pr-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
                   {...register('clientPhone')}

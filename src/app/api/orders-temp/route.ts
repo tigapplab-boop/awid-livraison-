@@ -9,7 +9,7 @@ import { createTempOrder, getAvailableTempOrders, getAllPendingTempOrders } from
 import { authenticateRequest, type JwtPayload } from '@/bm/lib/auth'
 import { rateLimit } from '@/bm/lib/rate-limit'
 
-const PHONE_REGEX = /^0[5-7][0-9]{8}$/
+const PHONE_REGEX = /^(\+213[567][0-9]{8}|0[567][0-9]{8})$/
 
 export async function GET(request: NextRequest) {
   try {
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     // Validation
     if (!clientPhone || !PHONE_REGEX.test(clientPhone)) {
       return NextResponse.json(
-        { error: 'Invalid phone number. Must match Algerian format: 0[5-7]XXXXXXXX' },
+        { error: 'Invalid phone number. Format: +213 5/6/7XXXXXXXX ou 05/06/07XXXXXXXX' },
         { status: 400 }
       )
     }
