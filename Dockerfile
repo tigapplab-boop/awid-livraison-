@@ -28,18 +28,16 @@ RUN npm install -g bun
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Set environment variables for build
-ARG JWT_SECRET
-ENV JWT_SECRET=${JWT_SECRET}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Build Next.js
-RUN bun run build --verbose
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build Next.js using npm instead of bun for better compatibility
+RUN npm run build
 
 # Copy static assets and public into standalone output
 RUN cp -r .next/static .next/standalone/.next/ && \

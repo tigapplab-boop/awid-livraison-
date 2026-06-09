@@ -1,9 +1,9 @@
 import { useCallback, RefObject } from 'react'
 import { useReactToPrint } from 'react-to-print'
 
-export function usePrint(ref: RefObject<HTMLDivElement>) {
+export function usePrint(ref: RefObject<HTMLDivElement | null>) {
   const handlePrint = useReactToPrint({
-    content: () => ref.current,
+    contentRef: ref,
     documentTitle: 'Ticket Cuisine',
     pageStyle: `
       @page {

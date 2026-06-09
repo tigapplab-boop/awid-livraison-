@@ -197,7 +197,7 @@ export async function emitToRoom(event: string, room: string, data: Record<strin
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'x-emit-secret': EMIT_SECRET
+        'x-emit-secret': EMIT_SECRET as string
       },
       body: JSON.stringify({ event, room, data }),
     });
