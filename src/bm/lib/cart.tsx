@@ -45,10 +45,75 @@ export function isSupplement(product: Product): boolean {
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [selectedZone, setSelectedZone] = useState<DeliveryZone | null>(null);
-  const [deliveryFee, setDeliveryFee] = useState<number>(0);
-  const [isNightDelivery, setIsNightDelivery] = useState<boolean>(false);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bm_cart')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch {
+          return []
+        }
+      }
+    }
+    return []
+  });
+  const [selectedZone, setSelectedZone] = useState<DeliveryZone | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bm_cart_zone')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch {
+          return null
+        }
+      }
+    }
+    return null
+  });
+  const [deliveryFee, setDeliveryFee] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bm_cart_fee')
+      if (saved) return parseInt(saved)
+    }
+    return 0
+  });
+  const [isNightDelivery, setIsNightDelivery] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bm_cart_night')
+      if (saved) return saved === 'true'
+    }
+    return false
+  });
+
+  // Save to localStorage when cart changes
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bm_cart', JSON.stringify(items))
+    }
+  }, [items])
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (selectedZone) {
+        localStorage.setItem('bm_cart_zone', JSON.stringify(selectedZone))
+      } else {
+        localStorage.removeItem('bm_cart_zone')
+      }
+    }
+  }, [selectedZone])
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bm_cart_fee', String(deliveryFee))
+    }
+  }, [deliveryFee])
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bm_cart_night', String(isNightDelivery))
+    }
+  }, [isNightDelivery])
 
   const addItem = useCallback((product: Product, quantity: number = 1, attachedToProductId?: string) => {
     setItems((prev) => {
@@ -143,6 +208,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setSelectedZone(null);
     setDeliveryFee(0);
     setIsNightDelivery(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('bm_cart')
+      localStorage.removeItem('bm_cart_zone')
+      localStorage.removeItem('bm_cart_fee')
+      localStorage.removeItem('bm_cart_night')
+    }
   }, []);
 
   const setZone = useCallback((zone: DeliveryZone, feeCalc: FeeCalculation) => {
