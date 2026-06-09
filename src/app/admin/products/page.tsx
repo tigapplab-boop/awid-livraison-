@@ -349,7 +349,7 @@ export default function ProductsPage() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-stone-800">{product.name}</span>
                               {product.nameAr && <span className="text-xs text-stone-400">({product.nameAr})</span>}
                               {product.isNew && <Badge className="bg-bm-primary text-stone-900 border-0 text-xs">NOUVEAU</Badge>}
@@ -361,19 +361,20 @@ export default function ProductsPage() {
                               {formatDA(product.price)} {product.description && `• ${product.description}`}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <Switch
                               checked={product.isAvailable}
                               onCheckedChange={() => toggleProductAvailability(product)}
+                              className="flex-shrink-0"
                             />
-                            <Button variant="ghost" size="sm" onClick={() => openEditProduct(product)} className="h-8 w-8 p-0">
+                            <Button variant="ghost" size="sm" onClick={() => openEditProduct(product)} className="h-8 w-8 p-0 flex-shrink-0">
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => { setDeleteTarget({ type: 'product', id: product.id, name: product.name }); setDeleteDialog(true) }}
-                              className="h-8 w-8 p-0 text-red-500"
+                              className="h-8 w-8 p-0 text-red-500 flex-shrink-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

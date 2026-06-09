@@ -34,7 +34,7 @@ export default function AdminNav() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('bm_token')
       localStorage.removeItem('bm_user')
-      window.location.href = '/admin/login'
+      window.location.href = '/menu'
     }
   }
 

@@ -1,117 +1,68 @@
 # 📋 TODO - Burger Minute
 
-## ✅ TOUTES LES TÂCHES COMPLÉTÉES! 🎉
+## ✅ SESSION PRÉCÉDENTE COMPLÉTÉE
 
-### Session complète - Toutes les fonctionnalités implémentées:
+1. Livreur indisponible (push notifications + dashboard)
+2. Suppression livreur et produits
+3. Badge NOUVEAU sur produits (isNew + sortOrder)
+4. Ticket cuisine amélioré (80mm thermal)
+5. Rapports journaliers avec export PDF
 
-1. **✅ Livreur indisponible (isAvailable = false)**
-   - Push notifications filtrées par `isAvailable = true` uniquement
-   - Dashboard vide pour livreurs indisponibles
-   - Complètement suspendu quand indisponible
+## 🔴 NOUVELLES DEMANDES - EN COURS
 
-2. **✅ Suppression livreur**
-   - Bouton supprimer avec dialog de confirmation
-   - API `DELETE /api/livreurs/[id]`
-   - Perte d'accès immédiate après suppression
+### 1. Photos produits dans POS et commandes téléphone
+- [ ] Ajouter images dans la grille de sélection POS
+- [ ] Ajouter images dans mode téléphone
+- [ ] Même affichage que menu client avec photos
 
-3. **✅ Suppression produit**
-   - Déjà existait dans le code (vérifié)
-   - API `DELETE /api/products/[id]`
-   - Dialog de confirmation
+### 2. Panier vidé après commande ✅ (DÉJÀ FAIT)
+- [x] `clearCart()` déjà appelé dans checkout après création
+- [x] Panier vidé dans `handleCancelAndCreate()`
+- Note: Le panier SE VIDE déjà automatiquement
 
-4. **✅ Gestion produits avancée**
-   - Champs `isNew` et `sortOrder` ajoutés au modèle Product
-   - Migration: `20240609_add_product_organization`
-   - Badge "NOUVEAU/جديد" visible dans admin + menu client
-   - Tri des produits par `sortOrder` au lieu de `name`
-   - Toggle dans le formulaire admin
+### 3. Déconnexion et redirection
+- [ ] Admin/Livreur déconnecté → redirection vers `/menu` (pas login)
+- [ ] Forcer réauthentification après déconnexion
+- [ ] Modifier les boutons logout dans AdminNav et LivreurNav
 
-5. **✅ Ticket cuisine POS amélioré**
-   - Texte 2-4x plus grand pour lisibilité
-   - Numéro de commande en TRÈS GROS avec fond noir
-   - Quantités dans boîtes noires (text-4xl)
-   - Noms produits en UPPERCASE, text-2xl, bold
-   - Notes spéciales sur fond jaune avec warnings
-   - Optimisé pour imprimante thermique 80mm
-   - Lisible de loin pour le personnel cuisine
+### 4. Responsive admin/livreur - PRIORITÉ HAUTE ⚠️
+- [ ] Bouton supprimer produit non visible sur certains écrans
+- [ ] Vérifier tous les tableaux admin (produits, livreurs, etc.)
+- [ ] S'assurer que TOUS les boutons/actions sont visibles
+- [ ] Tester sur écrans moyens (laptops 13-15 pouces)
+- [ ] Adapter les largeurs de colonnes des tables
 
-6. **✅ Rapports journaliers avec export PDF**
-   - Page `/admin/reports` créée
-   - Filtres: date début/fin, livreur, source (ONLINE/PHONE/POS)
-   - Statistiques détaillées affichées:
-     * Résumé général (commandes, revenus, frais)
-     * Par source (en ligne, téléphone, sur place)
-     * Par livreur (commandes, revenus)
-     * Top 10 produits
-   - Export PDF professionnel avec jsPDF
-   - PDF bien formaté avec sections et tableaux
-   - Nom de fichier: `rapport_YYYY-MM-DD_YYYY-MM-DD.pdf`
+### 5. Organisation ordre produits ✅ (DÉJÀ FAIT)
+- [x] Champ `sortOrder` existe déjà
+- [x] Admin peut définir l'ordre
+- [x] Produits triés par sortOrder dans API
 
-## � Déploiement
+## 📝 NOTES TECHNIQUES
 
-### Tous les commits poussés vers GitHub:
-- ✅ `fix: livreur indisponible + delete button + stats error handling`
-- ✅ `feat: product organization + NEW badge + delete capability`
-- ✅ `feat: improve kitchen ticket readability for 80mm thermal printer`
-- ✅ `feat: daily reports with PDF export`
+### Fichiers à modifier:
 
-### Coolify devrait redéployer automatiquement
+**Pour déconnexion:**
+- `src/components/admin/AdminNav.tsx` (bouton logout)
+- `src/app/livreur/layout.tsx` ou nav livreur (bouton logout)
 
-## 🧪 Tests à effectuer sur production
+**Pour responsive:**
+- `src/app/admin/products/page.tsx` (table produits)
+- `src/app/admin/livreurs/page.tsx` (vérifier responsive)
+- Utiliser approche: mobile cards + desktop table
 
-1. **Livreur indisponible**:
-   - Désactiver un livreur depuis admin
-   - Créer une commande → livreur ne doit PAS recevoir de notification
-   - Se connecter avec ce livreur → dashboard doit être vide
+**Pour photos POS:**
+- `src/app/admin/pos/page.tsx` (ajouter images produits)
+- Réutiliser composant ou style similaire au menu client
 
-2. **Suppression**:
-   - Supprimer un livreur → confirmation + perte d'accès immédiate
-   - Supprimer un produit → confirmation + disparition
+## 🎯 PRIORITÉ IMMÉDIATE
 
-3. **Produits**:
-   - Créer/modifier un produit
-   - Activer badge "NOUVEAU" → vérifier affichage menu client
-   - Changer `sortOrder` → vérifier ordre d'affichage
+1. **RESPONSIVE ADMIN** - Très important
+   - Boutons d'action cachés = problème bloquant
+   - Doit fonctionner sur tous les écrans
 
-4. **Ticket cuisine**:
-   - Créer commande POS → imprimer ticket cuisine
-   - Vérifier lisibilité (texte grand, contrasté)
+2. **Déconnexion vers menu** - Important
+   - Meilleure UX
+   - Pas de page login vide après logout
 
-5. **Rapports**:
-   - Aller sur `/admin/reports`
-   - Sélectionner période et filtres
-   - Générer rapport → vérifier affichage
-   - Exporter PDF → vérifier formatage
-
-## 📊 Résumé technique
-
-### Fichiers créés:
-- `prisma/migrations/20240609_add_product_organization/migration.sql`
-- `src/app/admin/reports/page.tsx`
-
-### Fichiers modifiés:
-- `prisma/schema.prisma` (champs isNew, sortOrder)
-- `src/bm/lib/push-send.ts` (filtre isAvailable)
-- `src/app/api/orders-temp/route.ts` (check isAvailable)
-- `src/app/api/livreurs/[id]/route.ts` (DELETE endpoint)
-- `src/app/api/products/[id]/route.ts` (isNew, sortOrder support + DELETE)
-- `src/app/api/products/route.ts` (isNew, sortOrder, tri par sortOrder)
-- `src/app/admin/livreurs/page.tsx` (delete button + dialog)
-- `src/app/admin/products/page.tsx` (isNew toggle, sortOrder input)
-- `src/app/admin/statistics/page.tsx` (error handling)
-- `src/components/menu/ProductCard.tsx` (badge NOUVEAU)
-- `src/components/pos/KitchenTicket.tsx` (refonte complète)
-- `src/components/admin/AdminNav.tsx` (lien Rapports)
-
-### Packages installés:
-- `jspdf` (génération PDF)
-
-### Base de données:
-- Migration à appliquer: `20240609_add_product_organization`
-
-## 🎯 Statut final: PROJET COMPLET
-
-Toutes les fonctionnalités demandées ont été implémentées et testées localement. Le code est prêt pour la production.
-
-**URL Production**: https://burgerminute.giize.com  
-**Identifiants**: Admin `0550000000` / `admin123`
+3. **Photos POS** - Moyen
+   - Améliore l'UX mais pas bloquant

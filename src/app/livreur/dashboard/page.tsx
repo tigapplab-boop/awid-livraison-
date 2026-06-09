@@ -457,7 +457,7 @@ export default function LivreurDashboard() {
   const handleLogout = () => {
     disconnect()
     clearAuth()
-    window.location.href = '/login'
+    window.location.href = '/menu'
   }
 
   // ========================================

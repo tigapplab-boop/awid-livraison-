@@ -303,10 +303,22 @@ export default function POSPage() {
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
-                    className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-stone-100 hover:border-bm-primary hover:shadow-md transition-all min-h-[100px] active:scale-95"
+                    className="flex flex-col items-center justify-center p-3 bg-white rounded-xl border-2 border-stone-100 hover:border-bm-primary hover:shadow-md transition-all active:scale-95"
                   >
+                    {/* Product Image */}
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full aspect-square object-cover rounded-lg mb-2"
+                      />
+                    ) : (
+                      <div className="w-full aspect-square bg-stone-100 rounded-lg mb-2 flex items-center justify-center">
+                        <span className="text-4xl opacity-30">🍔</span>
+                      </div>
+                    )}
                     <span className="font-bold text-stone-800 text-sm text-center leading-tight">{product.name}</span>
-                    <span className="text-bm-primary font-extrabold text-lg mt-2">{formatDA(product.price)}</span>
+                    <span className="text-bm-primary font-extrabold text-lg mt-1">{formatDA(product.price)}</span>
                   </button>
                 ))}
             </div>
