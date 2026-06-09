@@ -2,6 +2,12 @@
 
 ## ✅ COMPLÉTÉ - SESSION ACTUELLE
 
+### Fix icônes dans champs de saisie
+- [x] Augmentation du padding left/right de pl-12 à pl-14
+- [x] Texte ne chevauche plus les icônes
+- [x] Meilleure lisibilité pendant la saisie
+- [x] Fix appliqué sur tous les champs (nom, téléphone, adresse, notes)
+
 ### Photo de couverture menu client
 - [x] Ajout champ `COVER_IMAGE` dans SystemSettings
 - [x] API `/api/settings/cover` (GET, POST, PATCH, DELETE)

@@ -4,7 +4,7 @@
 // ========================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/bm/lib/prisma';
+import { db } from '@/lib/db';
 import { verifyToken } from '@/bm/lib/auth';
 import { writeFile, unlink } from 'fs/promises';
 import path from 'path';
@@ -15,7 +15,7 @@ const COVER_KEY = 'COVER_IMAGE';
 // GET - Récupérer la photo de couverture actuelle
 export async function GET() {
   try {
-    const setting = await prisma.systemSettings.findUnique({
+    const setting = await db.systemSettings.findUnique({
       where: { key: COVER_KEY },
     });
 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Delete old cover image if exists
-    const oldSetting = await prisma.systemSettings.findUnique({
+    const oldSetting = await db.systemSettings.findUnique({
       where: { key: COVER_KEY },
     });
 
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     const imageUrl = `/uploads/${filename}`;
 
     // Save to database
-    await prisma.systemSettings.upsert({
+    await db.systemSettings.upsert({
       where: { key: COVER_KEY },
       create: {
         key: COVER_KEY,
@@ -143,7 +143,7 @@ export async function PATCH(req: NextRequest) {
 
     const { enabled } = await req.json();
 
-    const setting = await prisma.systemSettings.findUnique({
+    const setting = await db.systemSettings.findUnique({
       where: { key: COVER_KEY },
     });
 
@@ -154,7 +154,7 @@ export async function PATCH(req: NextRequest) {
     const data = JSON.parse(setting.value);
     data.enabled = enabled;
 
-    await prisma.systemSettings.update({
+    await db.systemSettings.update({
       where: { key: COVER_KEY },
       data: { value: JSON.stringify(data) },
     });
@@ -184,7 +184,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const setting = await prisma.systemSettings.findUnique({
+    const setting = await db.systemSettings.findUnique({
       where: { key: COVER_KEY },
     });
 
@@ -204,7 +204,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete from database
-    await prisma.systemSettings.delete({
+    await db.systemSettings.delete({
       where: { key: COVER_KEY },
     });
 
