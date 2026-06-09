@@ -10,58 +10,57 @@
 - [x] Livreur indisponible ne voit PAS les commandes dans dashboard
 - [x] Bouton supprimer livreur avec confirmation
 - [x] Page statistiques - meilleure gestion d'erreur
+- [x] Gestion produits: champs isNew et sortOrder ajoutés
+- [x] Badge "NOUVEAU" affiché sur produits (admin + client)
+- [x] Tri produits par sortOrder
+- [x] Suppression produits (déjà existait, vérifié)
+- [x] Ticket cuisine amélioré pour imprimante 80mm thermique
 
-## 🔴 PRIORITÉ HAUTE - Bugs critiques
+## 🟡 PRIORITÉ MOYENNE - Fonctionnalités restantes
 
-### ~~1. Livreur indisponible (isAvailable = false)~~ ✅
-- [x] Ne doit PAS recevoir de notifications push
-- [x] Ne doit PAS voir les nouvelles commandes dans son dashboard
-- [x] Modifier `src/bm/lib/push-send.ts` pour filtrer par `isAvailable`
-
-### ~~2. Bouton supprimer livreur~~ ✅
-- [x] Ajouter bouton "Supprimer" dans `src/app/admin/livreurs/page.tsx`
-- [x] Créer API `DELETE /api/livreurs/[id]`
-- [x] Confirmation avant suppression
-
-### ~~3. Page statistiques admin - Erreur~~ ✅
-- [x] Debugger `src/app/admin/statistics/page.tsx`
-- [x] Vérifier API `/api/stats/advanced`
-- [x] Gérer les cas où il n'y a pas de données
-
-## 🟡 PRIORITÉ MOYENNE - Fonctionnalités
-
-### 4. Gestion produits avancée
-- [ ] Ajouter champ `isNew` dans le modèle Product (migration)
-- [ ] Ajouter champ `sortOrder` dans le modèle Product
-- [ ] Badge "NEW" sur les produits (activable/désactivable)
-- [ ] Tri par prix / date dans page admin produits
-
-### 5. Améliorer ticket cuisine POS
-- [ ] Augmenter taille police dans `src/components/pos/KitchenTicket.tsx`
-- [ ] Optimiser pour imprimante thermique 80mm
-- [ ] Rendre plus lisible (gras, espacements)
-
-### 6. Rapports journaliers
+### 6. Rapports journaliers avec export PDF
 - [ ] Créer page `/admin/reports`
-- [ ] Filtres: date, livreur, type commande
-- [ ] Export PDF avec bibliothèque jsPDF
-- [ ] Afficher stats groupées
-
-## 🟢 PRIORITÉ BASSE - Améliorations
-
-### 7. Livreurs disponibles par défaut
-- [x] Modifier seed pour `isAvailable: true` par défaut ✅ (déjà fait)
-- [x] Vérifier création nouveau livreur
-
-### 8. Commande acceptée disparaît
-- [x] Déjà implémenté via WebSocket `order:accepted`
-- [x] Vérifier que ça fonctionne correctement
+- [ ] Filtres: date, livreur, type commande (ONLINE/PHONE/POS)
+- [ ] Stats groupées: nombre commandes, revenus, par source, par livreur
+- [ ] Installer jsPDF: `npm install jspdf`
+- [ ] Bouton "Export PDF" avec tables formatées
+- [ ] Affichage des résultats avant export
 
 ## 📝 NOTES
-- **Prochaine étape**: Tester sur Coolify
-  1. Commit les changements
-  2. Push vers GitHub
-  3. Tester notifications push avec livreur indisponible
-  4. Tester suppression livreur
-  5. Vérifier page statistiques
-- Identifiants: Admin `0550000000` / `admin123`, Livreur `livreur` / `livreur`
+
+### Complété dans cette session:
+1. **Livreur indisponible** ✅
+   - Push notifications filtrées par `isAvailable = true`
+   - Dashboard vide pour livreurs indisponibles
+   
+2. **Delete livreur** ✅
+   - Bouton suppression avec confirmation
+   - API DELETE /api/livreurs/[id]
+   - Perte d'accès immédiate
+   
+3. **Delete produit** ✅
+   - Déjà existait dans le code
+   - API DELETE /api/products/[id]
+   - Confirmation avant suppression
+   
+4. **Gestion produits avancée** ✅
+   - Champs `isNew` et `sortOrder` ajoutés
+   - Migration: `20240609_add_product_organization`
+   - Badge "NOUVEAU/جديد" visible client + admin
+   - Tri par `sortOrder` au lieu de `name`
+   
+5. **Ticket cuisine** ✅
+   - Texte 2-4x plus grand
+   - Numéro commande en très gros avec fond noir
+   - Quantités dans des boîtes noires 4xl
+   - Noms produits en UPPERCASE, text-2xl, bold
+   - Notes spéciales sur fond jaune
+   - Optimisé pour lire de loin
+
+### Prochaine étape:
+- **Rapports journaliers avec PDF** (tâche 6)
+- Tester toutes les modifications sur Coolify
+
+### Identifiants de test:
+- Admin: `0550000000` / `admin123`
+- Livreur: `livreur` / `livreur`

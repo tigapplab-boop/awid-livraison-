@@ -11,7 +11,7 @@ import {
   DollarSign, 
   BarChart3,
   Megaphone,
-  Settings,
+  FileText,
   LogOut
 } from 'lucide-react'
 
@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { href: '/admin/livreurs', label: 'Livreurs', icon: Users },
   { href: '/admin/zones', label: 'Zones', icon: MapPin },
   { href: '/admin/statistics', label: 'Stats', icon: BarChart3 },
+  { href: '/admin/reports', label: 'Rapports', icon: FileText },
   { href: '/admin/finance', label: 'Finance', icon: DollarSign },
 ]
 
