@@ -1,10 +1,42 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import type { Locale } from '@/lib/locale'
+
+interface PromoSettings {
+  enabled: boolean
+  text: string
+  textAr: string
+  bgColor: string
+}
 
 export function PromoBanner({ locale }: { locale: Locale }) {
   const isRTL = locale === 'ar'
+  const [promo, setPromo] = useState<PromoSettings | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/settings/promo')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setPromo(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  // Ne rien afficher si désactivé ou en chargement
+  if (loading || !promo || !promo.enabled) {
+    return null
+  }
+
+  const text = isRTL ? promo.textAr : promo.text
 
   return (
-    <div className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden bg-gradient-to-r from-bm-primary to-[#FF8C00] text-stone-900 p-4 relative shadow-sm">
+    <div 
+      className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden text-stone-900 p-4 relative shadow-sm"
+      style={{ background: `linear-gradient(to right, ${promo.bgColor}, #FF8C00)` }}
+    >
       <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
         <div className="text-4xl animate-bounce drop-shadow-sm">🎉</div>
         <div className="flex-1">
@@ -12,7 +44,7 @@ export function PromoBanner({ locale }: { locale: Locale }) {
             {isRTL ? 'عرض اليوم' : 'PROMO DU JOUR'}
           </p>
           <p className="text-[15px] font-bold leading-tight">
-            {isRTL ? 'قائمة مزدوجة + بطاطا = 650 دج' : 'Menu Double + Frites = 650 DA'}
+            {text}
           </p>
         </div>
       </div>
