@@ -20,7 +20,7 @@ export async function GET() {
     });
 
     if (!setting) {
-      return NextResponse.json({ coverImage: null });
+      return NextResponse.json({ coverImage: null, enabled: false });
     }
 
     const data = JSON.parse(setting.value);
@@ -28,7 +28,7 @@ export async function GET() {
   } catch (error) {
     console.error('[GET /api/settings/cover] Error:', error);
     return NextResponse.json(
-      { error: 'Erreur de récupération' },
+      { coverImage: null, enabled: false },
       { status: 500 }
     );
   }
