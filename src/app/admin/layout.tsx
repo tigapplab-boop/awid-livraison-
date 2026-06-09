@@ -13,6 +13,8 @@ import {
   LogOut,
   Menu,
   ChevronRight,
+  Megaphone,
+  Phone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -23,9 +25,12 @@ const NAV_ITEMS = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/pos', label: 'POS / Caisse', icon: ShoppingCart },
   { href: '/admin/products', label: 'Produits', icon: Package },
+  { href: '/admin/promo', label: 'Promos', icon: Megaphone },
   { href: '/admin/zones', label: 'Zones', icon: MapPin },
   { href: '/admin/livreurs', label: 'Livreurs', icon: Bike },
-  { href: '/admin/stats', label: 'Statistiques', icon: BarChart3 },
+  { href: '/admin/contacts', label: 'Contacts', icon: Phone },
+  { href: '/admin/statistics', label: 'Statistiques', icon: BarChart3 },
+  { href: '/admin/stats', label: 'Stats Simple', icon: BarChart3 },
   { href: '/admin/finance', label: 'Finance', icon: DollarSign },
 ]
 

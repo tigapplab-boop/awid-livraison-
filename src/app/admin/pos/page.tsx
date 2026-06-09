@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Minus, Plus, Trash2, ShoppingCart, Phone, Store, Send, AlertCircle } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingCart, Phone, Store, Send, AlertCircle, Printer } from 'lucide-react'
 import type { CategoryWithProducts, DeliveryZone } from '@/bm/types'
 import { formatDA } from '@/bm/lib/format'
+import KitchenTicket from '@/components/pos/KitchenTicket'
+import { usePrint } from '@/hooks/use-print'
 
 interface CartItem {
   productId: string
@@ -46,6 +48,11 @@ export default function POSPage() {
   const [selectedZone, setSelectedZone] = useState('')
   const [selectedLivreur, setSelectedLivreur] = useState('')
   const [orderNotes, setOrderNotes] = useState('')
+  const [lastPOSOrder, setLastPOSOrder] = useState<any>(null)
+
+  // Printing
+  const ticketRef = useRef<HTMLDivElement>(null)
+  const { print } = usePrint(ticketRef)
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
 
@@ -189,11 +196,6 @@ export default function POSPage() {
     setMessage(null)
 
     try {
-      // For POS orders, we create a phone order with POS-like details
-      // Using a default zone and no livreur
-      const defaultZone = zones[0]
-      const availableLivreur = livreurs.find((l) => l.isAvailable)
-
       const res = await fetch('/api/orders/pos', {
         method: 'POST',
         headers: {
@@ -213,7 +215,13 @@ export default function POSPage() {
       }
 
       setMessage({ type: 'success', text: `Commande sur place ${data.orderNumber} créée!` })
+      setLastPOSOrder(data)
       resetForm()
+      
+      // Auto-print ticket after a short delay
+      setTimeout(() => {
+        print()
+      }, 500)
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erreur' })
     } finally {
@@ -237,6 +245,16 @@ export default function POSPage() {
     <div className="p-4 lg:p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-extrabold text-stone-900">Point de Vente</h1>
+        {lastPOSOrder && (
+          <Button
+            onClick={() => print()}
+            variant="outline"
+            className="gap-2 border-bm-primary text-bm-primary hover:bg-bm-primary-50"
+          >
+            <Printer className="h-4 w-4" />
+            Réimprimer dernier ticket
+          </Button>
+        )}
       </div>
 
       {message && (
@@ -469,6 +487,15 @@ export default function POSPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Hidden Kitchen Ticket for Printing */}
+      <div style={{ display: 'none' }}>
+        {lastPOSOrder && (
+          <div ref={ticketRef}>
+            <KitchenTicket order={lastPOSOrder} />
+          </div>
+        )}
       </div>
     </div>
   )

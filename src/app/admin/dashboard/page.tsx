@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { RefreshCw, Clock, Truck, CheckCircle2, AlertCircle, Bell, BellOff, Settings, Eye, EyeOff, Save, X } from 'lucide-react'
 import type { Order, OrderStatus } from '@/bm/types'
 import { formatDA, formatTime, timeAgo } from '@/bm/lib/format'
+import LiveursOnlinePanel from '@/components/admin/LiveursOnlinePanel'
+import LivreurQuickCard from '@/components/admin/LivreurQuickCard'
 import {
   connect,
   disconnect,
@@ -702,6 +704,11 @@ export default function DashboardPage() {
             {error}
           </div>
         )}
+
+        {/* Livreurs Online Panel */}
+        <div className="mb-6">
+          <LiveursOnlinePanel />
+        </div>
 
         {/* Kanban Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 overflow-auto">

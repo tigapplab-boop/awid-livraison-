@@ -21,6 +21,11 @@ model User {
   password    String   // bcrypt hash
   mustChangePassword Boolean @default(false)
   isAvailable Boolean  @default(true)
+  
+  // Horaires de disponibilité (JSON: {monday: {start: "09:00", end: "18:00"}, ...})
+  availabilitySchedule String? // JSON string
+  lastSeenAt  DateTime? // Dernière activité (pour afficher "en ligne")
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -97,6 +102,13 @@ model Product {
   isAvailable Boolean   @default(true)
   categoryId  String
   category    Category  @relation(fields: [categoryId], references: [id])
+  
+  // Promo banner fields
+  hasPromo      Boolean   @default(false)
+  promoText     String?   // Ex: "-20%", "Offre spéciale"
+  promoTextAr   String?
+  promoBgColor  String?   @default("#FF6B00") // Couleur de fond de la bannière
+  
   createdAt   DateTime  @default(now())
 
   orderItems OrderItem[]
@@ -225,4 +237,14 @@ model DailyStats {
   topProductId      String?
 
   @@map("daily_stats")
+}
+
+// ==================== PARAMÈTRES SYSTÈME ====================
+model SystemSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique // "MAIN_PROMO_BANNER"
+  value     String   // JSON string
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
 }

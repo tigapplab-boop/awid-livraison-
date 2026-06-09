@@ -170,6 +170,30 @@ export async function updateOrderStatus(
 // Re-export formatPrice for convenience
 // ========================================
 
+// ========================================
+// Availability Management
+// ========================================
+
+export async function updateAvailability(
+  userId: string,
+  isAvailable?: boolean,
+  availabilitySchedule?: any
+): Promise<any> {
+  return apiFetch(`/livreurs/${userId}/availability`, {
+    method: 'PUT',
+    body: JSON.stringify({ isAvailable, availabilitySchedule }),
+  })
+}
+
+export async function sendHeartbeat(): Promise<void> {
+  try {
+    await apiFetch('/livreurs/heartbeat', { method: 'POST' })
+  } catch (err) {
+    // Silently fail heartbeat errors
+    console.warn('[Heartbeat] Failed:', err)
+  }
+}
+
 export { formatPrice }
 
 // ========================================

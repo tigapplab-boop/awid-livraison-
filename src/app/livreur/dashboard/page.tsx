@@ -21,6 +21,8 @@ import {
   getOrders,
   updateOrderStatus,
   formatPrice,
+  sendHeartbeat,
+  updateAvailability,
   type StoredUser,
 } from '@/bm/lib/livreur-api'
 import {
@@ -36,6 +38,7 @@ import {
   removeAllListeners as removeAllSocketListeners,
 } from '@/bm/lib/socket'
 import { subscribePush, isPushSubscribed, unsubscribePush } from '@/bm/lib/push-notifications'
+import AvailabilityManager from '@/components/livreur/AvailabilityManager'
 import {
   Phone,
   LogOut,
@@ -52,6 +55,7 @@ import {
   Bell,
   BellOff,
   HandMetal,
+  Calendar,
 } from 'lucide-react'
 
 // ========================================
@@ -92,6 +96,8 @@ export default function LivreurDashboard() {
   const [isAvailable, setIsAvailable] = useState(true)
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [showAvailabilityManager, setShowAvailabilityManager] = useState(false)
+  const [availabilitySchedule, setAvailabilitySchedule] = useState<any>(null)
 
   // Data states
   const [tempOrders, setTempOrders] = useState<OrderTempRedis[]>([])
@@ -260,16 +266,24 @@ export default function LivreurDashboard() {
     }
     initPush()
 
+    // Send heartbeat every 30 seconds
+    const heartbeatInterval = setInterval(async () => {
+      if (isAvailable) {
+        await sendHeartbeat()
+      }
+    }, 30000)
+
     // Register service worker if not already
     if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
       navigator.serviceWorker.register('/sw.js').catch(() => {})
     }
 
     return () => {
+      clearInterval(heartbeatInterval)
       removeAllSocketListeners()
       disconnect()
     }
-  }, [user, fetchData])
+  }, [user, fetchData, isAvailable])
 
   // Toggle push notification
   const handleTogglePush = async () => {
@@ -286,6 +300,33 @@ export default function LivreurDashboard() {
       if (result) {
         showToast('success', 'Notifications push activées')
       }
+    }
+  }
+
+  // Handle availability toggle
+  const handleToggleAvailability = async () => {
+    if (!user) return
+    const newAvailability = !isAvailable
+    try {
+      await updateAvailability(user.id, newAvailability, availabilitySchedule)
+      setIsAvailable(newAvailability)
+      showToast('success', newAvailability ? 'Vous êtes disponible' : 'Vous êtes indisponible')
+    } catch (err) {
+      showToast('error', 'Erreur lors de la mise à jour')
+    }
+  }
+
+  // Handle schedule update from AvailabilityManager
+  const handleUpdateSchedule = async (newIsAvailable: boolean, newSchedule: any) => {
+    if (!user) return
+    try {
+      await updateAvailability(user.id, newIsAvailable, newSchedule)
+      setIsAvailable(newIsAvailable)
+      setAvailabilitySchedule(newSchedule)
+      showToast('success', 'Horaires mis à jour ✓')
+    } catch (err) {
+      showToast('error', 'Erreur lors de la mise à jour')
+      throw err
     }
   }
 
@@ -474,7 +515,7 @@ export default function LivreurDashboard() {
           <div className="flex items-center gap-2">
             {/* Available toggle */}
             <button
-              onClick={() => setIsAvailable(!isAvailable)}
+              onClick={handleToggleAvailability}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors min-h-[36px] ${
                 isAvailable
                   ? 'bg-green-100 text-green-700'
@@ -483,6 +524,16 @@ export default function LivreurDashboard() {
             >
               <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-stone-400'}`} />
               {isAvailable ? 'Disponible' : 'Indisponible'}
+            </button>
+
+            {/* Schedule manager button */}
+            <button
+              onClick={() => setShowAvailabilityManager(true)}
+              className="p-2 rounded-lg transition-colors text-stone-400 hover:text-bm-primary hover:bg-bm-primary-50"
+              aria-label="Gérer les horaires"
+              title="Gérer les horaires"
+            >
+              <Calendar className="w-5 h-5" />
             </button>
 
             {/* Push notification toggle */}
@@ -632,6 +683,17 @@ export default function LivreurDashboard() {
           {toast.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
           {toast.message}
         </div>
+      )}
+
+      {/* ===== Availability Manager Modal ===== */}
+      {showAvailabilityManager && user && (
+        <AvailabilityManager
+          userId={user.id}
+          currentAvailability={isAvailable}
+          currentSchedule={availabilitySchedule}
+          onUpdate={handleUpdateSchedule}
+          onClose={() => setShowAvailabilityManager(false)}
+        />
       )}
     </div>
   )

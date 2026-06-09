@@ -15,9 +15,9 @@ import { t } from '@/lib/i18n';
 import { ChevronLeft, ChevronRight, Phone, MapPin, User, FileText, Check } from 'lucide-react';
 
 const checkoutSchema = z.object({
-  clientName: z.string().min(2).max(100),
-  clientPhone: z.string().regex(/^0[5-7][0-9]{8}$/),
-  clientAddress: z.string().min(10).max(500),
+  clientName: z.string().min(3, 'Minimum 3 caractères').max(100),
+  clientPhone: z.string().regex(/^0[5-7][0-9]{8}$/, 'Numéro invalide (05/06/07)'),
+  clientAddress: z.string().min(15, 'Minimum 15 caractères').max(500),
   notes: z.string().max(500).optional(),
 });
 
@@ -223,19 +223,17 @@ export default function CheckoutPage() {
                 {t('checkout.fullName', locale)} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <div className={`absolute inset-y-0 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} flex items-center pointer-events-none`}>
-                  <User className="h-5 w-5 text-stone-400" />
-                </div>
+                <User className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400 ${isRTL ? 'right-4' : 'left-4'} pointer-events-none`} />
                 <input
                   id="clientName"
                   type="text"
                   placeholder={t('checkout.fullName', locale)}
-                  className={`input-bm pl-10 pr-10 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all ${errors.clientName ? 'border-red-500' : 'border-stone-100'}`}
+                  className={`input-bm ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all ${errors.clientName ? 'border-red-500' : 'border-stone-100'}`}
                   {...register('clientName')}
                 />
               </div>
               {errors.clientName && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">{t('checkout.errors.name', locale)}</p>
+                <p className="mt-1.5 text-xs font-medium text-red-500">{errors.clientName.message || t('checkout.errors.name', locale)}</p>
               )}
             </div>
 
@@ -244,21 +242,20 @@ export default function CheckoutPage() {
                 {t('checkout.phone', locale)} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <div className={`absolute inset-y-0 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} flex items-center pointer-events-none`}>
-                  <Phone className="h-5 w-5 text-stone-400" />
-                </div>
+                <Phone className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400 left-4 pointer-events-none`} />
                 <input
                   id="clientPhone"
                   type="tel"
                   placeholder="05XXXXXXXX"
                   inputMode="numeric"
+                  maxLength={10}
                   dir="ltr"
-                  className={`input-bm pl-10 pr-10 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
+                  className={`input-bm pl-12 pr-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
                   {...register('clientPhone')}
                 />
               </div>
               {errors.clientPhone && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">{t('checkout.errors.phone', locale)}</p>
+                <p className="mt-1.5 text-xs font-medium text-red-500">{errors.clientPhone.message || t('checkout.errors.phone', locale)}</p>
               )}
             </div>
 
@@ -267,19 +264,17 @@ export default function CheckoutPage() {
                 {t('checkout.address', locale)} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <div className={`absolute top-4 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} pointer-events-none`}>
-                  <MapPin className="h-5 w-5 text-stone-400" />
-                </div>
+                <MapPin className={`absolute top-4 h-5 w-5 text-stone-400 ${isRTL ? 'right-4' : 'left-4'} pointer-events-none`} />
                 <textarea
                   id="clientAddress"
                   placeholder={t('checkout.address', locale)}
                   rows={3}
-                  className={`input-bm pl-10 pr-10 pt-4 w-full bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all resize-none ${errors.clientAddress ? 'border-red-500' : 'border-stone-100'}`}
+                  className={`input-bm ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} pt-3 w-full bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all resize-none ${errors.clientAddress ? 'border-red-500' : 'border-stone-100'}`}
                   {...register('clientAddress')}
                 />
               </div>
               {errors.clientAddress && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">{t('checkout.errors.address', locale)}</p>
+                <p className="mt-1.5 text-xs font-medium text-red-500">{errors.clientAddress.message || t('checkout.errors.address', locale)}</p>
               )}
             </div>
 
@@ -288,14 +283,12 @@ export default function CheckoutPage() {
                 {t('checkout.notes', locale)}
               </label>
               <div className="relative">
-                <div className={`absolute inset-y-0 ${isRTL ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} flex items-center pointer-events-none`}>
-                  <FileText className="h-5 w-5 text-stone-400" />
-                </div>
+                <FileText className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400 ${isRTL ? 'right-4' : 'left-4'} pointer-events-none`} />
                 <input
                   id="notes"
                   type="text"
                   placeholder={t('checkout.notes', locale)}
-                  className={`input-bm pl-10 pr-10 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all border-stone-100`}
+                  className={`input-bm ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all border-stone-100`}
                   {...register('notes')}
                 />
               </div>

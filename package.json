@@ -59,6 +59,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^3.0.3",
+    "react-to-print": "^3.3.0",
     "recharts": "^2.15.4",
     "sharp": "^0.34.3",
     "socket.io-client": "^4.8.3",
