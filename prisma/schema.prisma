@@ -246,7 +246,7 @@ model DailyStats {
 // ==================== PARAMÈTRES SYSTÈME ====================
 model SystemSettings {
   id        String   @id @default(uuid())
-  key       String   @unique // "MAIN_PROMO_BANNER"
+  key       String   @unique // "MAIN_PROMO_BANNER", "COVER_IMAGE"
   value     String   // JSON string
   updatedAt DateTime @updatedAt
 

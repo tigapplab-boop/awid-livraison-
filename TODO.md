@@ -1,5 +1,24 @@
 # 📋 TODO - Burger Minute
 
+## ✅ COMPLÉTÉ - SESSION ACTUELLE
+
+### Photo de couverture menu client
+- [x] Ajout champ `COVER_IMAGE` dans SystemSettings
+- [x] API `/api/settings/cover` (GET, POST, PATCH, DELETE)
+- [x] Interface admin dans page Promo (onglet "Photo de Couverture")
+- [x] Upload/suppression d'image
+- [x] Toggle activation/désactivation
+- [x] Affichage automatique sur page `/menu` client
+- [x] Migration Prisma créée
+
+### Boutons +/- pour quantités produits
+- [x] Ajout fonction `decrementItem()` dans cart.tsx
+- [x] Modification ProductCard avec boutons + et -
+- [x] Affichage quantité entre les boutons
+- [x] Logique: si qty > 1 → décrémente, si qty = 1 → supprime
+- [x] Feedback haptique sur les deux boutons
+- [x] Interface intuitive et tactile
+
 ## ✅ SESSION PRÉCÉDENTE COMPLÉTÉE
 
 1. Livreur indisponible (push notifications + dashboard)
@@ -7,62 +26,67 @@
 3. Badge NOUVEAU sur produits (isNew + sortOrder)
 4. Ticket cuisine amélioré (80mm thermal)
 5. Rapports journaliers avec export PDF
+6. Responsive fixes (boutons admin visibles)
+7. Logout vers /menu au lieu de /login
+8. Photos produits dans POS
+9. Vérification phase 6 complète
 
-## 🔴 NOUVELLES DEMANDES - EN COURS
+## 📝 NOTES TECHNIQUES - SESSION ACTUELLE
 
-### 1. Photos produits dans POS et commandes téléphone
-- [ ] Ajouter images dans la grille de sélection POS
-- [ ] Ajouter images dans mode téléphone
-- [ ] Même affichage que menu client avec photos
+### Fichiers modifiés:
 
-### 2. Panier vidé après commande ✅ (DÉJÀ FAIT)
-- [x] `clearCart()` déjà appelé dans checkout après création
-- [x] Panier vidé dans `handleCancelAndCreate()`
-- Note: Le panier SE VIDE déjà automatiquement
+**Cover Image:**
+- `prisma/schema.prisma` (commentaire COVER_IMAGE key)
+- `src/app/api/settings/cover/route.ts` (NEW - API complète)
+- `src/app/admin/promo/page.tsx` (nouvel onglet)
+- `src/app/menu/page.tsx` (affichage cover si enabled)
+- `prisma/migrations/20240609_add_cover_image_setting/migration.sql`
 
-### 3. Déconnexion et redirection
-- [ ] Admin/Livreur déconnecté → redirection vers `/menu` (pas login)
-- [ ] Forcer réauthentification après déconnexion
-- [ ] Modifier les boutons logout dans AdminNav et LivreurNav
+**Boutons +/-:**
+- `src/bm/lib/cart.tsx` (ajout `decrementItem()`)
+- `src/components/menu/ProductCard.tsx` (boutons +/- conditionnels)
+- `src/app/menu/page.tsx` (handleRemoveProduct avec decrementItem)
 
-### 4. Responsive admin/livreur - PRIORITÉ HAUTE ⚠️
-- [ ] Bouton supprimer produit non visible sur certains écrans
-- [ ] Vérifier tous les tableaux admin (produits, livreurs, etc.)
-- [ ] S'assurer que TOUS les boutons/actions sont visibles
-- [ ] Tester sur écrans moyens (laptops 13-15 pouces)
-- [ ] Adapter les largeurs de colonnes des tables
+### Utilisation Admin:
 
-### 5. Organisation ordre produits ✅ (DÉJÀ FAIT)
-- [x] Champ `sortOrder` existe déjà
-- [x] Admin peut définir l'ordre
-- [x] Produits triés par sortOrder dans API
+1. **Upload couverture:**
+   - Admin → Gestion des Promos → Onglet "Photo de Couverture"
+   - Cliquer zone upload → Sélectionner image (max 5MB)
+   - Toggle "Afficher la couverture" pour activer/désactiver
+   - Bouton poubelle pour supprimer
 
-## 📝 NOTES TECHNIQUES
+2. **Résultat client:**
+   - Page `/menu` affiche l'image en haut (si activée)
+   - Dimensions recommandées: 1200x400px
+   - Responsive automatique
 
-### Fichiers à modifier:
+### Comportement boutons +/-:
 
-**Pour déconnexion:**
-- `src/components/admin/AdminNav.tsx` (bouton logout)
-- `src/app/livreur/layout.tsx` ou nav livreur (bouton logout)
+- **Panier vide**: Bouton `+` uniquement
+- **1 item dans panier**: Boutons `-` `1` `+` apparaissent
+- **Clic sur `-`**: 
+  - Si qty > 1 → Décrémente de 1
+  - Si qty = 1 → Supprime du panier (avec suppléments attachés)
+- **Clic sur `+`**: Ajoute 1 au panier
 
-**Pour responsive:**
-- `src/app/admin/products/page.tsx` (table produits)
-- `src/app/admin/livreurs/page.tsx` (vérifier responsive)
-- Utiliser approche: mobile cards + desktop table
+## 🎯 PROCHAINES ÉTAPES
 
-**Pour photos POS:**
-- `src/app/admin/pos/page.tsx` (ajouter images produits)
-- Réutiliser composant ou style similaire au menu client
+1. Tester l'upload de couverture sur Coolify
+2. Vérifier comportement boutons +/- sur mobile
+3. S'assurer que les images uploadées persistent après redéploiement
 
-## 🎯 PRIORITÉ IMMÉDIATE
+## 🚀 DÉPLOIEMENT
 
-1. **RESPONSIVE ADMIN** - Très important
-   - Boutons d'action cachés = problème bloquant
-   - Doit fonctionner sur tous les écrans
+**Commandes à exécuter:**
+```bash
+npx prisma generate
+git add .
+git commit -m "feat: cover image + quantity buttons +/-"
+git push origin main
+```
 
-2. **Déconnexion vers menu** - Important
-   - Meilleure UX
-   - Pas de page login vide après logout
-
-3. **Photos POS** - Moyen
-   - Améliore l'UX mais pas bloquant
+**Après déploiement Coolify:**
+- La migration sera appliquée automatiquement (vide, juste documentation)
+- Le dossier /uploads est persistant (volume Docker)
+- Tester upload d'image depuis admin
+- Vérifier affichage sur /menu

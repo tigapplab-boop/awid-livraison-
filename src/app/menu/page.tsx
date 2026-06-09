@@ -56,6 +56,7 @@ function MenuContent() {
   const searchParams = useSearchParams();
   const orderConfirmed = searchParams.get('orderConfirmed');
   const [categories, setCategories] = useState<CategoryWithProducts[]>([]);
+  const [coverImage, setCoverImage] = useState<{ coverImage: string | null; enabled: boolean }>({ coverImage: null, enabled: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -67,7 +68,7 @@ function MenuContent() {
   const [animatingProduct, setAnimatingProduct] = useState<string | null>(null);
   const [showCartBar, setShowCartBar] = useState(false);
   
-  const { totalItems, addItem, items, subtotal } = useCart();
+  const { totalItems, addItem, items, subtotal, decrementItem } = useCart();
   const { locale, isRTL, isMounted } = useLocale();
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -77,12 +78,16 @@ function MenuContent() {
     try {
       setLoading(true);
       setError(null);
-      const data = await getProducts();
-      setCategories(data);
-      if (data.length > 0) {
-        setActiveSection(data[0].id);
+      const [productsData, coverData] = await Promise.all([
+        getProducts(),
+        fetch('/api/settings/cover').then(r => r.ok ? r.json() : { coverImage: null, enabled: false })
+      ]);
+      setCategories(productsData);
+      setCoverImage(coverData);
+      if (productsData.length > 0) {
+        setActiveSection(productsData[0].id);
         // Register supplement category IDs for the isSupplement() function
-        const supplementCatIds = data
+        const supplementCatIds = productsData
           .filter((c) => SUPPLEMENT_CATEGORY_NAMES.includes(c.name))
           .map((c) => c.id);
         registerSupplementCategoryIds(supplementCatIds);
@@ -205,6 +210,18 @@ function MenuContent() {
     }
   };
 
+  const handleRemoveProduct = (productId: string) => {
+    const product = categories.flatMap(c => c.products).find(p => p.id === productId);
+    if (!product) return;
+
+    // Haptic feedback
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(30);
+    }
+
+    decrementItem(productId);
+  };
+
   const handleAddSupplement = (product: Product) => {
     const burgersInCart = items.filter((item) => !item.attachedToProductId);
     if (burgersInCart.length === 0) {
@@ -266,6 +283,19 @@ function MenuContent() {
           onSelect={scrollToSection}
           locale={locale}
         />
+      )}
+
+      {/* Cover Image */}
+      {!loading && coverImage.enabled && coverImage.coverImage && (
+        <div className="px-4 pt-2">
+          <div className="relative rounded-2xl overflow-hidden shadow-md">
+            <img
+              src={coverImage.coverImage}
+              alt="Cover"
+              className="w-full h-40 object-cover"
+            />
+          </div>
+        </div>
       )}
 
       {/* Promo Banner */}
@@ -341,6 +371,7 @@ function MenuContent() {
                       key={product.id}
                       product={product as any}
                       onAdd={handleAddProduct}
+                      onRemove={handleRemoveProduct}
                       quantityInCart={getProductQuantity(product.id)}
                       locale={locale}
                       animatingProduct={animatingProduct}

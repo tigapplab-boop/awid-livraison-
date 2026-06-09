@@ -22,7 +22,10 @@ import {
   AlertCircle, 
   CheckCircle2,
   Palette,
-  FileText
+  FileText,
+  Image as ImageIcon,
+  Upload,
+  Trash2
 } from 'lucide-react'
 
 interface PromoConfig {
@@ -30,6 +33,11 @@ interface PromoConfig {
   text: string
   textAr: string
   bgColor: string
+}
+
+interface CoverConfig {
+  coverImage: string | null
+  enabled: boolean
 }
 
 interface Product {
@@ -57,6 +65,11 @@ export default function PromoManagementPage() {
     textAr: '',
     bgColor: '#FF6B00',
   })
+  const [coverImage, setCoverImage] = useState<CoverConfig>({
+    coverImage: null,
+    enabled: false,
+  })
+  const [uploadingCover, setUploadingCover] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -71,14 +84,20 @@ export default function PromoManagementPage() {
 
   const fetchData = async () => {
     try {
-      const [promoRes, productsRes] = await Promise.all([
+      const [promoRes, productsRes, coverRes] = await Promise.all([
         fetch('/api/settings/promo'),
         fetch('/api/products'),
+        fetch('/api/settings/cover'),
       ])
 
       if (promoRes.ok) {
         const promoData = await promoRes.json()
         setMainPromo(promoData)
+      }
+
+      if (coverRes.ok) {
+        const coverData = await coverRes.json()
+        setCoverImage(coverData.coverImage ? coverData : { coverImage: null, enabled: false })
       }
 
       if (productsRes.ok) {
@@ -185,6 +204,85 @@ export default function PromoManagementPage() {
     }
   }
 
+  const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingCover(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const res = await fetch('/api/settings/cover', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erreur d\'upload')
+      }
+
+      const data = await res.json()
+      setCoverImage(data)
+      showMessage('success', 'Photo de couverture uploadée ✓')
+    } catch (err) {
+      showMessage('error', err instanceof Error ? err.message : 'Erreur')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
+
+  const handleToggleCover = async (enabled: boolean) => {
+    try {
+      const res = await fetch('/api/settings/cover', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enabled }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erreur')
+      }
+
+      const data = await res.json()
+      setCoverImage(data)
+      showMessage('success', enabled ? 'Couverture activée ✓' : 'Couverture désactivée ✓')
+    } catch (err) {
+      showMessage('error', err instanceof Error ? err.message : 'Erreur')
+    }
+  }
+
+  const handleDeleteCover = async () => {
+    if (!confirm('Supprimer la photo de couverture ?')) return
+
+    try {
+      const res = await fetch('/api/settings/cover', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erreur')
+      }
+
+      setCoverImage({ coverImage: null, enabled: false })
+      showMessage('success', 'Couverture supprimée ✓')
+    } catch (err) {
+      showMessage('error', err instanceof Error ? err.message : 'Erreur')
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-4 lg:p-6">
@@ -220,8 +318,12 @@ export default function PromoManagementPage() {
         </div>
       )}
 
-      <Tabs defaultValue="main" className="w-full">
+      <Tabs defaultValue="cover" className="w-full">
         <TabsList className="mb-6 h-12">
+          <TabsTrigger value="cover" className="gap-2 min-h-[44px]">
+            <ImageIcon className="h-4 w-4" />
+            Photo de Couverture
+          </TabsTrigger>
           <TabsTrigger value="main" className="gap-2 min-h-[44px]">
             <Megaphone className="h-4 w-4" />
             Bannière Principale
@@ -235,6 +337,75 @@ export default function PromoManagementPage() {
             Descriptions
           </TabsTrigger>
         </TabsList>
+
+        {/* Cover Image Tab */}
+        <TabsContent value="cover">
+          <Card className="max-w-2xl">
+            <CardHeader>
+              <CardTitle>Photo de Couverture du Menu</CardTitle>
+              <p className="text-sm text-stone-500">
+                S'affiche en haut de la page menu client (recommandé: 1200x400px)
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base font-semibold">Afficher la couverture</Label>
+                  <p className="text-sm text-stone-500">Visible sur le menu client</p>
+                </div>
+                <Switch
+                  checked={coverImage.enabled}
+                  onCheckedChange={handleToggleCover}
+                  disabled={!coverImage.coverImage}
+                />
+              </div>
+
+              {/* Current Cover */}
+              {coverImage.coverImage && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Photo actuelle</Label>
+                  <div className="relative rounded-xl overflow-hidden border-2 border-stone-200">
+                    <img
+                      src={coverImage.coverImage}
+                      alt="Couverture"
+                      className="w-full h-48 object-cover"
+                    />
+                    <button
+                      onClick={handleDeleteCover}
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px]"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload New */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  {coverImage.coverImage ? 'Changer la photo' : 'Ajouter une photo'}
+                </Label>
+                <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-stone-300 rounded-xl cursor-pointer hover:border-bm-primary hover:bg-stone-50 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="h-10 w-10 text-stone-400 mb-3" />
+                    <p className="text-sm font-medium text-stone-700">
+                      {uploadingCover ? 'Upload en cours...' : 'Cliquez pour uploader'}
+                    </p>
+                    <p className="text-xs text-stone-500 mt-1">PNG, JPG, WEBP (max 5MB)</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleUploadCover}
+                    disabled={uploadingCover}
+                  />
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Main Banner Tab */}
         <TabsContent value="main">

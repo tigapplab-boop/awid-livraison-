@@ -13,6 +13,7 @@ interface CartState {
 interface CartContextType extends CartState {
   addItem: (product: Product, quantity?: number, attachedToProductId?: string) => void;
   removeItem: (productId: string) => void;
+  decrementItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   setZone: (zone: DeliveryZone, feeCalc: FeeCalculation) => void;
@@ -180,6 +181,42 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const decrementItem = useCallback((productId: string) => {
+    setItems((prev) => {
+      // Find first occurrence of product (without attachedToProductId)
+      const itemIndex = prev.findIndex(
+        (item) => item.product.id === productId && !item.attachedToProductId
+      );
+
+      if (itemIndex === -1) return prev;
+
+      const item = prev[itemIndex];
+
+      // If quantity > 1, decrement
+      if (item.quantity > 1) {
+        const updated = [...prev];
+        updated[itemIndex] = {
+          ...item,
+          quantity: item.quantity - 1,
+        };
+        return updated;
+      }
+
+      // If quantity === 1, remove item completely (and attached supplements)
+      const itemsToRemove = new Set<number>();
+      itemsToRemove.add(itemIndex);
+
+      // Remove supplements attached to this product
+      prev.forEach((it, index) => {
+        if (it.attachedToProductId === productId) {
+          itemsToRemove.add(index);
+        }
+      });
+
+      return prev.filter((_, index) => !itemsToRemove.has(index));
+    });
+  }, []);
+
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
       setItems((prev) => {
@@ -259,6 +296,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isNightDelivery,
       addItem,
       removeItem,
+      decrementItem,
       updateQuantity,
       clearCart,
       setZone,
@@ -276,6 +314,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isNightDelivery,
       addItem,
       removeItem,
+      decrementItem,
       updateQuantity,
       clearCart,
       setZone,
