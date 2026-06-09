@@ -9,13 +9,13 @@ import { requireRole } from '@/bm/lib/auth'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireRole(request, 'ADMIN')
     if (authResult instanceof NextResponse) return authResult
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { description, descriptionAr } = body
 

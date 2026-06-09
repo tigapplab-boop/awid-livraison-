@@ -9,14 +9,14 @@ import { authenticateRequest, type JwtPayload } from '@/bm/lib/auth'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request)
     if (authResult instanceof NextResponse) return authResult
     const user = authResult as JwtPayload
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { isAvailable, availabilitySchedule } = body
 
