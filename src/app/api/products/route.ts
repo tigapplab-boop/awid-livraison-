@@ -30,8 +30,10 @@ export async function GET(request: NextRequest) {
             image: true,
             isAvailable: true,
             categoryId: true,
+            isNew: true,
+            sortOrder: true,
           },
-          orderBy: { name: 'asc' },
+          orderBy: { sortOrder: 'asc' },
         },
       },
       orderBy: { sortOrder: 'asc' },
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (authResult instanceof NextResponse) return authResult
 
     const body = await request.json()
-    const { name, nameAr, description, price, image, isAvailable, categoryId } = body
+    const { name, nameAr, description, price, image, isAvailable, categoryId, isNew, sortOrder } = body
 
     if (!name || !price || !categoryId) {
       return NextResponse.json(
@@ -73,6 +75,8 @@ export async function POST(request: NextRequest) {
         image: image || null,
         isAvailable: isAvailable !== undefined ? isAvailable : true,
         categoryId,
+        isNew: isNew !== undefined ? isNew : false,
+        sortOrder: sortOrder !== undefined ? sortOrder : 0,
       },
       include: { category: true },
     })

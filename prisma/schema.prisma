@@ -109,6 +109,10 @@ model Product {
   promoTextAr   String?
   promoBgColor  String?   @default("#FF6B00") // Couleur de fond de la bannière
   
+  // Product organization
+  isNew         Boolean   @default(false)      // Badge "NOUVEAU" 
+  sortOrder     Int       @default(0)          // Ordre d'affichage manuel
+  
   createdAt   DateTime  @default(now())
 
   orderItems OrderItem[]

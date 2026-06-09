@@ -10,6 +10,7 @@ interface ProductCardProps {
     price: number // centimes
     image: string | null
     isAvailable: boolean
+    isNew?: boolean
   }
   onAdd: (productId: string) => void
   quantityInCart: number
@@ -44,13 +45,13 @@ export function ProductCard({ product, onAdd, quantityInCart, locale, animatingP
           </div>
         )}
 
-        {/* Badge Promo (si applicable) */}
-        {product.price < 50000 && ( // Example logic for promo
+        {/* Badge Nouveau */}
+        {product.isNew && (
           <div className={`
             absolute top-2 ${isRTL ? 'right-2' : 'left-2'}
-            bg-bm-primary text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm
+            bg-bm-primary text-stone-900 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm
           `}>
-            {isRTL ? 'عرض' : 'PROMO'}
+            {isRTL ? 'جديد' : 'NOUVEAU'}
           </div>
         )}
 

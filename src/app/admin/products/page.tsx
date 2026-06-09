@@ -24,6 +24,8 @@ interface ProductFull {
   image: string | null
   isAvailable: boolean
   categoryId: string
+  isNew: boolean
+  sortOrder: number
 }
 
 export default function ProductsPage() {
@@ -46,6 +48,8 @@ export default function ProductsPage() {
   const [pImage, setPImage] = useState('')
   const [pCategory, setPCategory] = useState('')
   const [pAvailable, setPAvailable] = useState(true)
+  const [pIsNew, setPIsNew] = useState(false)
+  const [pSortOrder, setPSortOrder] = useState('0')
   const [uploading, setUploading] = useState(false)
 
   // Category form
@@ -96,6 +100,8 @@ export default function ProductsPage() {
     setPImage('')
     setPCategory(categoryId || (categories[0]?.id ?? ''))
     setPAvailable(true)
+    setPIsNew(false)
+    setPSortOrder('0')
     setProductDialog(true)
   }
 
@@ -108,6 +114,8 @@ export default function ProductsPage() {
     setPImage(product.image || '')
     setPCategory(product.categoryId)
     setPAvailable(product.isAvailable)
+    setPIsNew(product.isNew || false)
+    setPSortOrder((product.sortOrder || 0).toString())
     setProductDialog(true)
   }
 
@@ -123,6 +131,8 @@ export default function ProductsPage() {
       return
     }
 
+    const sortOrder = parseInt(pSortOrder) || 0
+
     setSaving(true)
     try {
       const url = editingProduct ? `/api/products/${editingProduct.id}` : '/api/products'
@@ -135,6 +145,8 @@ export default function ProductsPage() {
         image: pImage || null,
         isAvailable: pAvailable,
         categoryId: pCategory,
+        isNew: pIsNew,
+        sortOrder: sortOrder,
       }
 
       const res = await fetch(url, {
@@ -340,6 +352,7 @@ export default function ProductsPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-stone-800">{product.name}</span>
                               {product.nameAr && <span className="text-xs text-stone-400">({product.nameAr})</span>}
+                              {product.isNew && <Badge className="bg-bm-primary text-stone-900 border-0 text-xs">NOUVEAU</Badge>}
                               <Badge className={product.isAvailable ? 'bg-emerald-100 text-emerald-700 border-0' : 'bg-red-100 text-red-700 border-0'}>
                                 {product.isAvailable ? 'Disponible' : 'Indisponible'}
                               </Badge>
@@ -522,6 +535,16 @@ export default function ProductsPage() {
                 <summary className="text-xs text-stone-400 cursor-pointer hover:text-stone-600">Ou entrer une URL manuellement</summary>
                 <Input value={pImage} onChange={(e) => setPImage(e.target.value)} className="input-bm mt-1" placeholder="https://..." />
               </details>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <Switch checked={pIsNew} onCheckedChange={setPIsNew} />
+                <Label>Badge "NOUVEAU"</Label>
+              </div>
+              <div>
+                <Label>Ordre d'affichage</Label>
+                <Input value={pSortOrder} onChange={(e) => setPSortOrder(e.target.value)} className="input-bm mt-1" placeholder="0" type="number" />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={pAvailable} onCheckedChange={setPAvailable} />
