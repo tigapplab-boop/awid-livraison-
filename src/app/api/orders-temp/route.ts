@@ -26,6 +26,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // If livreur is not available (isAvailable = false), return empty array
+    if (user.role === 'LIVREUR') {
+      const livreurUser = await db.user.findUnique({
+        where: { id: user.userId },
+        select: { isAvailable: true },
+      })
+      
+      if (!livreurUser || !livreurUser.isAvailable) {
+        return NextResponse.json([])
+      }
+    }
+
     // If livreur, only return PENDING orders (available to all) + ACCEPTED by this livreur
     // If admin, return all pending and accepted orders
     const orders = user.role === 'LIVREUR'

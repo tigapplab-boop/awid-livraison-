@@ -1,6 +1,7 @@
 // ========================================
 // AWID / BURGER MINUTE - Livreur [id] API Route
 // PATCH /api/livreurs/[id] - Update livreur (ADMIN)
+// DELETE /api/livreurs/[id] - Delete livreur (ADMIN)
 // ========================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -52,6 +53,36 @@ export async function PATCH(
     return NextResponse.json(livreur)
   } catch (error) {
     console.error('[Livreurs/PATCH] Error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const authResult = await requireRole(request, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
+    const { id } = await params
+
+    const existing = await db.user.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Livreur not found' }, { status: 404 })
+    }
+
+    if (existing.role !== 'LIVREUR') {
+      return NextResponse.json({ error: 'User is not a livreur' }, { status: 400 })
+    }
+
+    // Delete the livreur - cascade will handle push subscriptions
+    // Orders will keep the livreur reference (historical data)
+    await db.user.delete({ where: { id } })
+
+    return NextResponse.json({ success: true, message: 'Livreur deleted successfully' })
+  } catch (error) {
+    console.error('[Livreurs/DELETE] Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

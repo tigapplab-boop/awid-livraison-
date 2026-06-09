@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Bike, Plus, Pencil, Phone, Package, CheckCircle2 } from 'lucide-react'
+import { Bike, Plus, Pencil, Phone, Package, CheckCircle2, Trash2 } from 'lucide-react'
 
 interface Livreur {
   id: string
@@ -28,6 +28,8 @@ export default function LivreursPage() {
   const [loading, setLoading] = useState(true)
   const [dialog, setDialog] = useState(false)
   const [editingLivreur, setEditingLivreur] = useState<Livreur | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState(false)
+  const [deletingLivreur, setDeletingLivreur] = useState<Livreur | null>(null)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -141,6 +143,36 @@ export default function LivreursPage() {
     }
   }
 
+  const openDelete = (livreur: Livreur) => {
+    setDeletingLivreur(livreur)
+    setDeleteDialog(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingLivreur) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/livreurs/${deletingLivreur.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erreur')
+      }
+      setMessage({ type: 'success', text: 'Livreur supprimé' })
+      setDeleteDialog(false)
+      setDeletingLivreur(null)
+      fetchLivreurs()
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erreur' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const getStatusBadge = (livreur: Livreur) => {
     if (!livreur.isAvailable) {
       return <Badge className="bg-stone-200 text-stone-600 border-0">Hors ligne</Badge>
@@ -220,9 +252,14 @@ export default function LivreursPage() {
                   <Switch checked={livreur.isAvailable} onCheckedChange={() => toggleAvailable(livreur)} />
                   <span className="text-sm text-stone-600">Disponible</span>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => openEdit(livreur)} className="min-h-[44px] border-bm-primary text-bm-primary">
-                  <Pencil className="h-4 w-4 mr-1" /> Modifier
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openEdit(livreur)} className="min-h-[44px] border-bm-primary text-bm-primary">
+                    <Pencil className="h-4 w-4 mr-1" /> Modifier
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openDelete(livreur)} className="min-h-[44px] border-red-300 text-red-600 hover:bg-red-50">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -266,9 +303,14 @@ export default function LivreursPage() {
                     <Switch checked={livreur.isAvailable} onCheckedChange={() => toggleAvailable(livreur)} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(livreur)} className="h-8">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(livreur)} className="h-8">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openDelete(livreur)} className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -312,6 +354,34 @@ export default function LivreursPage() {
             <Button variant="outline" onClick={() => setDialog(false)} className="min-h-[48px]">Annuler</Button>
             <Button onClick={saveLivreur} disabled={saving} className="min-h-[48px] bg-bm-primary hover:bg-bm-primary-600 text-stone-900">
               {saving ? 'Enregistrement...' : editingLivreur ? 'Mettre à jour' : 'Créer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-stone-600">
+              Êtes-vous sûr de vouloir supprimer le livreur <span className="font-bold">{deletingLivreur?.name}</span> ?
+            </p>
+            <p className="text-sm text-red-600 mt-3">
+              ⚠️ Cette action est irréversible. Le livreur perdra immédiatement l'accès à son compte.
+            </p>
+            <p className="text-xs text-stone-500 mt-2">
+              Note: Les commandes historiques associées à ce livreur seront conservées.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteDialog(false)} disabled={saving} className="min-h-[48px]">
+              Annuler
+            </Button>
+            <Button onClick={confirmDelete} disabled={saving} className="min-h-[48px] bg-red-600 hover:bg-red-700 text-white">
+              {saving ? 'Suppression...' : 'Supprimer'}
             </Button>
           </DialogFooter>
         </DialogContent>

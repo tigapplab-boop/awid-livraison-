@@ -90,6 +90,7 @@ export default function StatisticsPage() {
   })
   const [selectedLivreur, setSelectedLivreur] = useState<string>('')
   const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
 
@@ -145,12 +146,15 @@ export default function StatisticsPage() {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      if (res.ok) {
-        const data = await res.json()
-        setStats(data)
+      if (!res.ok) {
+        throw new Error('Failed to fetch stats')
       }
+
+      const data = await res.json()
+      setStats(data)
     } catch (err) {
       console.error('Fetch stats error:', err)
+      setMessage({ type: 'error', text: 'Erreur lors du chargement des statistiques' })
     } finally {
       setFetching(false)
     }
@@ -188,6 +192,15 @@ export default function StatisticsPage() {
           Analyse détaillée des commandes et performances
         </p>
       </div>
+
+      {message && (
+        <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
+          message.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-red-50 border border-red-200 text-red-700'
+        }`}>
+          {message.text}
+          <button onClick={() => setMessage(null)} className="ml-2 opacity-50 hover:opacity-100">✕</button>
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="mb-6">

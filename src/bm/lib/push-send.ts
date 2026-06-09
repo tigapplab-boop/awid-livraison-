@@ -104,12 +104,29 @@ export async function sendPushToUser(
 
 /**
  * Send a push notification to all registered subscriptions.
+ * Only sends to users with isAvailable = true (active livreurs).
  * Automatically removes invalid/expired subscriptions from the database.
  */
 export async function sendPushToAll(
   payload: PushPayload
 ): Promise<{ sent: number; failed: number }> {
-  const subscriptions = await db.pushSubscription.findMany()
+  // Only get subscriptions for users who are available (isAvailable = true)
+  const subscriptions = await db.pushSubscription.findMany({
+    where: {
+      user: {
+        isAvailable: true,
+      },
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          isAvailable: true,
+        },
+      },
+    },
+  })
 
   if (subscriptions.length === 0) {
     return { sent: 0, failed: 0 }
