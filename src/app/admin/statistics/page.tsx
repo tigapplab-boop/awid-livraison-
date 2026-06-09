@@ -88,8 +88,8 @@ export default function StatisticsPage() {
     const today = new Date()
     return today.toISOString().split('T')[0]
   })
-  const [selectedLivreur, setSelectedLivreur] = useState<string>('')
-  const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const [selectedLivreur, setSelectedLivreur] = useState<string | undefined>(undefined)
+  const [selectedProduct, setSelectedProduct] = useState<string | undefined>(undefined)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
@@ -139,8 +139,8 @@ export default function StatisticsPage() {
       const params = new URLSearchParams()
       if (startDate) params.set('startDate', startDate)
       if (endDate) params.set('endDate', endDate)
-      if (selectedLivreur) params.set('livreurId', selectedLivreur)
-      if (selectedProduct) params.set('productId', selectedProduct)
+      if (selectedLivreur && selectedLivreur !== 'all') params.set('livreurId', selectedLivreur)
+      if (selectedProduct && selectedProduct !== 'all') params.set('productId', selectedProduct)
 
       const res = await fetch(`/api/stats/advanced?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -232,12 +232,12 @@ export default function StatisticsPage() {
             </div>
             <div>
               <Label className="text-xs">Livreur</Label>
-              <Select value={selectedLivreur} onValueChange={setSelectedLivreur}>
+              <Select value={selectedLivreur || ''} onValueChange={(val) => setSelectedLivreur(val || undefined)}>
                 <SelectTrigger className="mt-1.5">
                   <SelectValue placeholder="Tous les livreurs" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les livreurs</SelectItem>
+                  <SelectItem value="all">Tous les livreurs</SelectItem>
                   {livreurs.map(l => (
                     <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
                   ))}
@@ -246,12 +246,12 @@ export default function StatisticsPage() {
             </div>
             <div>
               <Label className="text-xs">Produit</Label>
-              <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+              <Select value={selectedProduct || ''} onValueChange={(val) => setSelectedProduct(val || undefined)}>
                 <SelectTrigger className="mt-1.5">
                   <SelectValue placeholder="Tous les produits" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les produits</SelectItem>
+                  <SelectItem value="all">Tous les produits</SelectItem>
                   {products.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
