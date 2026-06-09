@@ -246,7 +246,7 @@ export default function CheckoutPage() {
                   id="clientName"
                   type="text"
                   placeholder={t('checkout.fullName', locale)}
-                  className={`input-bm ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all ${errors.clientName ? 'border-red-500' : 'border-stone-100'}`}
+                  className={`input-bm ${isRTL ? 'pr-14 pl-4' : 'pl-14 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all ${errors.clientName ? 'border-red-500' : 'border-stone-100'}`}
                   {...register('clientName')}
                 />
               </div>
@@ -268,7 +268,7 @@ export default function CheckoutPage() {
                   inputMode="numeric"
                   maxLength={16}
                   dir="ltr"
-                  className={`input-bm pl-12 pr-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
+                  className={`input-bm pl-14 pr-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
                   {...register('clientPhone')}
                 />
               </div>
@@ -287,7 +287,7 @@ export default function CheckoutPage() {
                   id="clientAddress"
                   placeholder={t('checkout.address', locale)}
                   rows={3}
-                  className={`input-bm ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} pt-3 w-full bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all resize-none ${errors.clientAddress ? 'border-red-500' : 'border-stone-100'}`}
+                  className={`input-bm ${isRTL ? 'pr-14 pl-4' : 'pl-14 pr-4'} pt-3 w-full bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all resize-none ${errors.clientAddress ? 'border-red-500' : 'border-stone-100'}`}
                   {...register('clientAddress')}
                 />
               </div>
@@ -306,7 +306,7 @@ export default function CheckoutPage() {
                   id="notes"
                   type="text"
                   placeholder={t('checkout.notes', locale)}
-                  className={`input-bm ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all border-stone-100`}
+                  className={`input-bm ${isRTL ? 'pr-14 pl-4' : 'pl-14 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all border-stone-100`}
                   {...register('notes')}
                 />
               </div>
