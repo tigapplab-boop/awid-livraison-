@@ -12,7 +12,7 @@ import type { OrderTempRedis, CreateTempOrderDto, CartItem } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
-import { ChevronLeft, ChevronRight, Phone, MapPin, User, FileText, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, AlertCircle } from 'lucide-react';
 
 const checkoutSchema = z.object({
   clientName: z.string().min(3, 'Minimum 3 caractères').max(100),
@@ -240,16 +240,13 @@ export default function CheckoutPage() {
               <label htmlFor="clientName" className="mb-1.5 block text-sm font-bold text-stone-700">
                 {t('checkout.fullName', locale)} <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <User className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400 ${isRTL ? 'right-4' : 'left-4'} pointer-events-none`} />
-                <input
-                  id="clientName"
-                  type="text"
-                  placeholder={t('checkout.fullName', locale)}
-                  className={`input-bm ${isRTL ? 'pr-14 pl-4' : 'pl-14 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all ${errors.clientName ? 'border-red-500' : 'border-stone-100'}`}
-                  {...register('clientName')}
-                />
-              </div>
+              <input
+                id="clientName"
+                type="text"
+                placeholder={t('checkout.fullName', locale)}
+                className={`input-bm px-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all ${errors.clientName ? 'border-red-500' : 'border-stone-100'}`}
+                {...register('clientName')}
+              />
               {errors.clientName && (
                 <p className="mt-1.5 text-xs font-medium text-red-500">{errors.clientName.message || t('checkout.errors.name', locale)}</p>
               )}
@@ -259,19 +256,16 @@ export default function CheckoutPage() {
               <label htmlFor="clientPhone" className="mb-1.5 block text-sm font-bold text-stone-700">
                 {t('checkout.phone', locale)} <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <Phone className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400 left-4 pointer-events-none`} />
-                <input
-                  id="clientPhone"
-                  type="tel"
-                  placeholder="+213 5XXXXXXXX ou 05XXXXXXXX"
-                  inputMode="numeric"
-                  maxLength={16}
-                  dir="ltr"
-                  className={`input-bm pl-14 pr-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
-                  {...register('clientPhone')}
-                />
-              </div>
+              <input
+                id="clientPhone"
+                type="tel"
+                placeholder="+213 5XXXXXXXX ou 05XXXXXXXX"
+                inputMode="numeric"
+                maxLength={16}
+                dir="ltr"
+                className={`input-bm px-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all text-left ${errors.clientPhone ? 'border-red-500' : 'border-stone-100'}`}
+                {...register('clientPhone')}
+              />
               {errors.clientPhone && (
                 <p className="mt-1.5 text-xs font-medium text-red-500">{errors.clientPhone.message || t('checkout.errors.phone', locale)}</p>
               )}
@@ -281,16 +275,13 @@ export default function CheckoutPage() {
               <label htmlFor="clientAddress" className="mb-1.5 block text-sm font-bold text-stone-700">
                 {t('checkout.address', locale)} <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <MapPin className={`absolute top-4 h-5 w-5 text-stone-400 ${isRTL ? 'right-4' : 'left-4'} pointer-events-none`} />
-                <textarea
-                  id="clientAddress"
-                  placeholder={t('checkout.address', locale)}
-                  rows={3}
-                  className={`input-bm ${isRTL ? 'pr-14 pl-4' : 'pl-14 pr-4'} pt-3 w-full bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all resize-none ${errors.clientAddress ? 'border-red-500' : 'border-stone-100'}`}
-                  {...register('clientAddress')}
-                />
-              </div>
+              <textarea
+                id="clientAddress"
+                placeholder={t('checkout.address', locale)}
+                rows={3}
+                className={`input-bm px-4 pt-3 w-full bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all resize-none ${errors.clientAddress ? 'border-red-500' : 'border-stone-100'}`}
+                {...register('clientAddress')}
+              />
               {errors.clientAddress && (
                 <p className="mt-1.5 text-xs font-medium text-red-500">{errors.clientAddress.message || t('checkout.errors.address', locale)}</p>
               )}
@@ -300,16 +291,13 @@ export default function CheckoutPage() {
               <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-stone-700">
                 {t('checkout.notes', locale)}
               </label>
-              <div className="relative">
-                <FileText className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400 ${isRTL ? 'right-4' : 'left-4'} pointer-events-none`} />
-                <input
-                  id="notes"
-                  type="text"
-                  placeholder={t('checkout.notes', locale)}
-                  className={`input-bm ${isRTL ? 'pr-14 pl-4' : 'pl-14 pr-4'} w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all border-stone-100`}
-                  {...register('notes')}
-                />
-              </div>
+              <input
+                id="notes"
+                type="text"
+                placeholder={t('checkout.notes', locale)}
+                className={`input-bm px-4 w-full h-14 bg-white border-2 rounded-2xl focus:border-bm-primary focus:ring-4 focus:ring-bm-primary/10 transition-all border-stone-100`}
+                {...register('notes')}
+              />
             </div>
           </div>
 
@@ -410,7 +398,7 @@ export default function CheckoutPage() {
           <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl safe-bottom animate-in slide-in-from-bottom-10" dir={isRTL ? 'rtl' : 'ltr'}>
             <div className="mb-6 flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bm-accent-50 text-bm-accent">
-                <FileText className="h-7 w-7" />
+                <AlertCircle className="h-7 w-7" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-stone-900">{t('checkout.pendingTitle', locale)}</h3>

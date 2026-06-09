@@ -2,6 +2,12 @@
 
 ## ✅ COMPLÉTÉ - SESSION ACTUELLE
 
+### Fix build error - Prisma import
+- [x] Corrigé import `@/bm/lib/prisma` → `@/lib/db`
+- [x] Aligné avec tous les autres routes API
+- [x] Build Next.js réussit maintenant
+- [x] Redéployé sur Coolify
+
 ### Fix icônes dans champs de saisie
 - [x] Augmentation du padding left/right de pl-12 à pl-14
 - [x] Texte ne chevauche plus les icônes
