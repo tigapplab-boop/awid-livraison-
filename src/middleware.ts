@@ -18,7 +18,10 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const JWT_SECRET_RAW = process.env.JWT_SECRET || 'burger-minute-secret-key-change-in-production'
+      const JWT_SECRET_RAW = process.env.JWT_SECRET
+      if (!JWT_SECRET_RAW || JWT_SECRET_RAW.length < 32) {
+        throw new Error('FATAL: JWT_SECRET must be set and >= 32 characters')
+      }
       const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW)
       
       const { payload } = await jwtVerify(token, JWT_SECRET)

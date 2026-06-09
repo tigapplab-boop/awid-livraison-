@@ -186,6 +186,10 @@ export function removeAllListeners(): void {
 // Uses the internal POST /emit endpoint on port 3004 (separate from Socket.IO port 3003)
 
 const EMIT_URL = process.env.EMIT_SERVICE_URL || 'http://localhost:3004';
+const EMIT_SECRET = process.env.EMIT_SECRET
+if (!EMIT_SECRET || EMIT_SECRET.length < 32) {
+  throw new Error('FATAL: EMIT_SECRET must be set and >= 32 characters')
+}
 
 export async function emitToRoom(event: string, room: string, data: Record<string, unknown>): Promise<boolean> {
   try {
@@ -193,7 +197,7 @@ export async function emitToRoom(event: string, room: string, data: Record<strin
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'x-emit-secret': process.env.EMIT_SECRET || ''
+        'x-emit-secret': EMIT_SECRET
       },
       body: JSON.stringify({ event, room, data }),
     });
