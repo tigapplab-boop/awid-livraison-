@@ -32,9 +32,14 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Force new build ID to invalidate Server Actions cache
+ENV NEXT_BUILD_ID=prod-ready-20260610
 
 # Generate Prisma client
 RUN npx prisma generate
+
+# Clear Next.js cache before build
+RUN rm -rf .next
 
 # Build Next.js using npm instead of bun for better compatibility
 RUN npm run build

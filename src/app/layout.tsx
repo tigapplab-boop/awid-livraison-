@@ -57,6 +57,7 @@ export default function RootLayout({
     <html lang="fr" dir="ltr" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icon-512.png" />
+        <script src="/cache-bust.js" defer />
       </head>
       <body className={`${inter.variable} ${poppins.variable} ${cairo.variable} antialiased bg-bm-bg text-stone-900 font-sans`}>
         <CartProvider>
