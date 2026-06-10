@@ -12,7 +12,8 @@ import {
   BarChart3,
   Megaphone,
   FileText,
-  LogOut
+  LogOut,
+  Clock
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: '/admin/pos', label: 'POS', icon: ShoppingCart },
   { href: '/admin/products', label: 'Produits', icon: Package },
   { href: '/admin/promo', label: 'Promos', icon: Megaphone },
+  { href: '/admin/hours', label: 'Horaires', icon: Clock },
   { href: '/admin/livreurs', label: 'Livreurs', icon: Users },
   { href: '/admin/zones', label: 'Zones', icon: MapPin },
   { href: '/admin/statistics', label: 'Stats', icon: BarChart3 },

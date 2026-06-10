@@ -13,6 +13,8 @@ import { formatPrice } from '@/bm/lib/format';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
 import { ChevronLeft, ChevronRight, Check, AlertCircle } from 'lucide-react';
+import ClosedModal from '@/components/ClosedModal';
+import { isRestaurantOpen, type OpeningHours } from '@/bm/lib/opening-hours';
 
 const checkoutSchema = z.object({
   clientName: z.string().min(3, 'Minimum 3 caractères').max(100),
@@ -45,6 +47,46 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pendingModal, setPendingModal] = useState<PendingModalData | null>(null);
   const [pendingAction, setPendingAction] = useState<'modify' | 'create' | null>(null);
+  
+  // Opening hours state
+  const [openingHours, setOpeningHours] = useState<OpeningHours | null>(null);
+  const [restaurantStatus, setRestaurantStatus] = useState<{
+    isOpen: boolean;
+    message: string;
+    messageAr: string;
+    nextOpening: Date | null;
+  } | null>(null);
+  const [showClosedModal, setShowClosedModal] = useState(false);
+
+  // Fetch opening hours
+  useEffect(() => {
+    const fetchHours = async () => {
+      try {
+        const res = await fetch('/api/settings/hours');
+        if (res.ok) {
+          const hours = await res.json();
+          setOpeningHours(hours);
+          
+          // Check if restaurant is open
+          const status = isRestaurantOpen(hours);
+          setRestaurantStatus(status);
+          
+          // Show modal if closed
+          if (!status.isOpen && hours.enabled) {
+            setShowClosedModal(true);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch opening hours:', err);
+      }
+    };
+    
+    fetchHours();
+    
+    // Recheck every minute
+    const interval = setInterval(fetchHours, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const {
     register,
@@ -127,6 +169,12 @@ export default function CheckoutPage() {
     async (data: CheckoutFormData) => {
       if (!selectedZone || items.length === 0) return;
 
+      // Check if restaurant is open
+      if (restaurantStatus && !restaurantStatus.isOpen && openingHours?.enabled) {
+        setShowClosedModal(true);
+        return;
+      }
+
       setSubmitting(true);
       setSubmitError(null);
 
@@ -155,7 +203,7 @@ export default function CheckoutPage() {
         setSubmitting(false);
       }
     },
-    [selectedZone, items, createNewOrder],
+    [selectedZone, items, createNewOrder, restaurantStatus, openingHours],
   );
 
   const handleModifyExisting = useCallback(() => {
@@ -463,6 +511,18 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Restaurant Closed Modal */}
+      {restaurantStatus && (
+        <ClosedModal
+          isOpen={showClosedModal}
+          message={restaurantStatus.message}
+          messageAr={restaurantStatus.messageAr}
+          nextOpening={restaurantStatus.nextOpening}
+          onClose={() => setShowClosedModal(false)}
+          lang={locale === 'ar' ? 'ar' : 'fr'}
+        />
       )}
     </div>
   );
