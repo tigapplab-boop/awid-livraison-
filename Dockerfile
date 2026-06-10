@@ -33,7 +33,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Force new build ID to invalidate Server Actions cache
-ENV NEXT_BUILD_ID=prod-ready-20260610
+ENV NEXT_BUILD_ID=opening-hours-20260610-v2
 
 # Generate Prisma client
 RUN npx prisma generate

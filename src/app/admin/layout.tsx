@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Megaphone,
   Phone,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { href: '/admin/pos', label: 'POS / Caisse', icon: ShoppingCart },
   { href: '/admin/products', label: 'Produits', icon: Package },
   { href: '/admin/promo', label: 'Promos', icon: Megaphone },
+  { href: '/admin/hours', label: 'Horaires', icon: Clock },
   { href: '/admin/zones', label: 'Zones', icon: MapPin },
   { href: '/admin/livreurs', label: 'Livreurs', icon: Bike },
   { href: '/admin/contacts', label: 'Contacts', icon: Phone },
@@ -163,7 +165,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     localStorage.removeItem('bm_token')
     localStorage.removeItem('bm_user')
     document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    window.location.href = '/login?kicked=1'
+    window.location.href = '/menu'
   }, [])
 
   // Login page doesn't need the layout

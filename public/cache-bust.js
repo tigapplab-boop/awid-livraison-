@@ -1,6 +1,6 @@
 // Cache bust script - Force reload after deployment
 (function() {
-  const BUILD_ID = 'prod-ready-20260610';
+  const BUILD_ID = 'opening-hours-20260610-v2';
   const STORAGE_KEY = 'bm_build_id';
   
   try {
