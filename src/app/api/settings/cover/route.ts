@@ -15,22 +15,25 @@ const COVER_KEY = 'COVER_IMAGE';
 // GET - Récupérer la photo de couverture actuelle
 export async function GET() {
   try {
+    console.log('[GET /api/settings/cover] Fetching cover image...')
     const setting = await db.systemSettings.findUnique({
       where: { key: COVER_KEY },
-    });
+    })
 
     if (!setting) {
-      return NextResponse.json({ coverImage: null, enabled: false });
+      console.log('[GET /api/settings/cover] No cover image found')
+      return NextResponse.json({ coverImage: null, enabled: false })
     }
 
-    const data = JSON.parse(setting.value);
-    return NextResponse.json(data);
+    const data = JSON.parse(setting.value)
+    console.log('[GET /api/settings/cover] Cover image found:', data)
+    return NextResponse.json(data)
   } catch (error) {
-    console.error('[GET /api/settings/cover] Error:', error);
+    console.error('[GET /api/settings/cover] Error:', error)
     return NextResponse.json(
-      { coverImage: null, enabled: false },
+      { error: 'Erreur serveur', coverImage: null, enabled: false },
       { status: 500 }
-    );
+    )
   }
 }
 

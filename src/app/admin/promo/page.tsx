@@ -87,7 +87,10 @@ export default function PromoManagementPage() {
       const [promoRes, productsRes, coverRes] = await Promise.all([
         fetch('/api/settings/promo'),
         fetch('/api/products'),
-        fetch('/api/settings/cover'),
+        fetch('/api/settings/cover').catch(err => {
+          console.error('Cover fetch failed:', err)
+          return { ok: false, status: 500 }
+        }),
       ])
 
       if (promoRes.ok) {
@@ -96,8 +99,25 @@ export default function PromoManagementPage() {
       }
 
       if (coverRes.ok) {
-        const coverData = await coverRes.json()
-        setCoverImage(coverData.coverImage ? coverData : { coverImage: null, enabled: false })
+        try {
+          const text = await coverRes.text()
+          console.log('Cover response text:', text.substring(0, 200))
+          
+          // Check if response is HTML (error page)
+          if (text.trim().startsWith('<')) {
+            console.error('Cover API returned HTML instead of JSON')
+            setCoverImage({ coverImage: null, enabled: false })
+          } else {
+            const coverData = JSON.parse(text)
+            setCoverImage(coverData.coverImage ? coverData : { coverImage: null, enabled: false })
+          }
+        } catch (err) {
+          console.error('Cover JSON parse error:', err)
+          setCoverImage({ coverImage: null, enabled: false })
+        }
+      } else {
+        console.log('Cover API response not OK:', coverRes.status)
+        setCoverImage({ coverImage: null, enabled: false })
       }
 
       if (productsRes.ok) {

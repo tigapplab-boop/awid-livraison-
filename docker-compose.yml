@@ -12,7 +12,7 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://burger:burger_secret@db:5432/burger_minute
+      - DATABASE_URL=postgresql://burger:burger_secret@db:5432/burger_minute?connection_limit=20&pool_timeout=10
       - UPLOAD_DIR=/app/upload
     depends_on:
       db:
@@ -24,6 +24,14 @@ services:
     restart: unless-stopped
     networks:
       - burger-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 1m
@@ -48,6 +56,14 @@ services:
     restart: unless-stopped
     networks:
       - burger-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:3004/ | grep error || exit 1"]
       interval: 30s
@@ -57,11 +73,19 @@ services:
   redis:
     image: redis:7-alpine
     container_name: burger-minute-redis
-    command: /bin/sh -c 'redis-server --requirepass "$${REDIS_PASSWORD:-burgerm1nute}" --appendonly yes'
+    command: /bin/sh -c 'redis-server --requirepass "$${REDIS_PASSWORD:-burgerm1nute}" --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru'
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-burgerm1nute}
     volumes:
       - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD:-burgerm1nute}\" ping | grep PONG"]
       interval: 5s
@@ -82,6 +106,14 @@ services:
       - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U burger -d burger_minute"]
       interval: 5s
