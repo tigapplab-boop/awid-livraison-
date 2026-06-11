@@ -16,6 +16,8 @@ import {
   Megaphone,
   Phone,
   Clock,
+  Droplet,
+  Warehouse,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -28,6 +30,8 @@ const NAV_ITEMS = [
   { href: '/admin/products', label: 'Produits', icon: Package },
   { href: '/admin/promo', label: 'Promos', icon: Megaphone },
   { href: '/admin/hours', label: 'Horaires', icon: Clock },
+  { href: '/admin/sauces', label: 'Sauces', icon: Droplet },
+  { href: '/admin/inventory', label: 'Inventaire', icon: Warehouse },
   { href: '/admin/zones', label: 'Zones', icon: MapPin },
   { href: '/admin/livreurs', label: 'Livreurs', icon: Bike },
   { href: '/admin/contacts', label: 'Contacts', icon: Phone },

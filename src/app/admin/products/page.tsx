@@ -352,7 +352,7 @@ export default function ProductsPage() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-stone-800">{product.name}</span>
                               {product.nameAr && <span className="text-xs text-stone-400">({product.nameAr})</span>}
-                              {product.isNew && <Badge className="bg-bm-primary text-stone-900 border-0 text-xs">NOUVEAU</Badge>}
+                              {(product as ProductFull).isNew && <Badge className="bg-bm-primary text-stone-900 border-0 text-xs">NOUVEAU</Badge>}
                               <Badge className={product.isAvailable ? 'bg-emerald-100 text-emerald-700 border-0' : 'bg-red-100 text-red-700 border-0'}>
                                 {product.isAvailable ? 'Disponible' : 'Indisponible'}
                               </Badge>
@@ -364,10 +364,10 @@ export default function ProductsPage() {
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <Switch
                               checked={product.isAvailable}
-                              onCheckedChange={() => toggleProductAvailability(product)}
+                              onCheckedChange={() => toggleProductAvailability(product as ProductFull)}
                               className="flex-shrink-0"
                             />
-                            <Button variant="ghost" size="sm" onClick={() => openEditProduct(product)} className="h-8 w-8 p-0 flex-shrink-0">
+                            <Button variant="ghost" size="sm" onClick={() => openEditProduct(product as ProductFull)} className="h-8 w-8 p-0 flex-shrink-0">
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button

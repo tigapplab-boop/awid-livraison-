@@ -6,10 +6,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   typescript: {
-    ignoreBuildErrors: true, // Skip TypeScript check during build (already verified locally)
-  },
-  eslint: {
-    ignoreDuringBuilds: true, // Skip ESLint during build
+    ignoreBuildErrors: true,
   },
   async headers() {
     return [

@@ -14,23 +14,23 @@ datasource db {
 
 // ==================== UTILISATEURS (Livreurs + Admins) ====================
 model User {
-  id          String   @id @default(uuid())
-  phone       String?  @unique
-  name        String
-  role        String   @default("LIVREUR") // LIVREUR | ADMIN
-  password    String   // bcrypt hash
+  id                 String  @id @default(uuid())
+  phone              String? @unique
+  name               String
+  role               String  @default("LIVREUR") // LIVREUR | ADMIN
+  password           String // bcrypt hash
   mustChangePassword Boolean @default(false)
-  isAvailable Boolean  @default(true)
-  
+  isAvailable        Boolean @default(true)
+
   // Horaires de disponibilité (JSON: {monday: {start: "09:00", end: "18:00"}, ...})
   availabilitySchedule String? // JSON string
-  lastSeenAt  DateTime? // Dernière activité (pour afficher "en ligne")
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  lastSeenAt           DateTime? // Dernière activité (pour afficher "en ligne")
 
-  ordersCreated  Order[] @relation("AdminCreatedOrders")
-  ordersAssigned Order[] @relation("LivreurOrders")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ordersCreated     Order[]            @relation("AdminCreatedOrders")
+  ordersAssigned    Order[]            @relation("LivreurOrders")
   pushSubscriptions PushSubscription[]
 
   @@map("users")
@@ -38,12 +38,12 @@ model User {
 
 // ==================== CLIENTS (créés après validation livreur) ====================
 model Client {
-  id           String          @id @default(uuid())
-  phone        String          @unique
+  id           String    @id @default(uuid())
+  phone        String    @unique
   name         String?
   firstOrderAt DateTime?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   tokens    ClientToken[]
   addresses ClientAddress[]
@@ -67,10 +67,10 @@ model ClientAddress {
   id        String   @id @default(uuid())
   clientId  String
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  label     String?  // "Maison", "Bureau"
+  label     String? // "Maison", "Bureau"
   address   String
-  zone      String   // VILLE | HORS_VILLE
-  location  String?  // JSON string: { lat, lng }
+  zone      String // VILLE | HORS_VILLE
+  location  String? // JSON string: { lat, lng }
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -92,59 +92,66 @@ model Category {
 }
 
 model Product {
-  id          String    @id @default(uuid())
-  name        String
-  nameAr      String?
-  description String?
+  id            String   @id @default(uuid())
+  name          String
+  nameAr        String?
+  description   String?
   descriptionAr String?
-  price       Int       // Centimes (ex: 45000 = 450 DA)
-  image       String?   // URL relative
-  isAvailable Boolean   @default(true)
-  categoryId  String
-  category    Category  @relation(fields: [categoryId], references: [id])
-  
-  // Promo banner fields
-  hasPromo      Boolean   @default(false)
-  promoText     String?   // Ex: "-20%", "Offre spéciale"
-  promoTextAr   String?
-  promoBgColor  String?   @default("#FF6B00") // Couleur de fond de la bannière
-  
-  // Product organization
-  isNew         Boolean   @default(false)      // Badge "NOUVEAU" 
-  sortOrder     Int       @default(0)          // Ordre d'affichage manuel
-  
-  createdAt   DateTime  @default(now())
+  price         Int // Centimes (ex: 45000 = 450 DA)
+  image         String? // URL relative
+  isAvailable   Boolean  @default(true)
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
 
-  orderItems OrderItem[]
+  // Promo banner fields
+  hasPromo     Boolean @default(false)
+  promoText    String? // Ex: "-20%", "Offre spéciale"
+  promoTextAr  String?
+  promoBgColor String? @default("#FF6B00") // Couleur de fond de la bannière
+
+  // Product organization
+  isNew     Boolean @default(false) // Badge "NOUVEAU" 
+  sortOrder Int     @default(0) // Ordre d'affichage manuel
+
+  // Stock management (pour boissons uniquement)
+  stockQuantity Int?    @default(0) // Stock disponible (NULL si pas de gestion stock)
+  minStockAlert Int?    @default(10) // Alerte si stock < X
+  trackStock    Boolean @default(false) // true = décrémente auto à la commande
+  unit          String? @default("unité") // "unité", "bouteille", "canette", "litre"
+
+  createdAt DateTime @default(now())
+
+  orderItems       OrderItem[]
+  inventoryProduct InventoryProduct?
 
   @@map("products")
 }
 
 // ==================== COMMANDES DÉFINITIVES ====================
 model Order {
-  id          String  @id @default(uuid())
-  orderNumber String  @unique // BM-YYMMDD-XXX
-  type        String  @default("ONLINE") // ONLINE | POS
-  source      String  @default("ONLINE") // ONLINE | PHONE_CALL
-  status      String  @default("PENDING") // PENDING | CONFIRMED | PREPARING | READY | DELIVERED | CANCELLED
+  id          String @id @default(uuid())
+  orderNumber String @unique // BM-YYMMDD-XXX
+  type        String @default("ONLINE") // ONLINE | POS
+  source      String @default("ONLINE") // ONLINE | PHONE_CALL
+  status      String @default("PENDING") // PENDING | CONFIRMED | PREPARING | READY | DELIVERED | CANCELLED
 
   // Client (obligatoire après validation)
   clientId    String
   client      Client  @relation(fields: [clientId], references: [id])
-  clientPhone String  // Redondant pour recherche rapide
+  clientPhone String // Redondant pour recherche rapide
   clientToken String? // Token anonyme du navigateur
 
   // Livreur
   assignedLivreurId String?
-  assignedLivreur   User?   @relation("LivreurOrders", fields: [assignedLivreurId], references: [id])
+  assignedLivreur   User?     @relation("LivreurOrders", fields: [assignedLivreurId], references: [id])
   createdByAdminId  String?
-  createdByAdmin    User?   @relation("AdminCreatedOrders", fields: [createdByAdminId], references: [id])
+  createdByAdmin    User?     @relation("AdminCreatedOrders", fields: [createdByAdminId], references: [id])
   assignedAt        DateTime?
 
   // Livraison
   clientAddress   String
-  deliveryZone    String  // VILLE | HORS_VILLE
-  deliveryFee     Int     // Centimes
+  deliveryZone    String // VILLE | HORS_VILLE
+  deliveryFee     Int // Centimes
   isNightDelivery Boolean @default(false)
 
   // Finance
@@ -152,8 +159,8 @@ model Order {
   total    Int
 
   // Cash livreur
-  amountPaid       Int?    // Ce que le client a réellement donné
-  changeDue        Int?    // Auto-calculé : amountPaid - total
+  amountPaid       Int? // Ce que le client a réellement donné
+  changeDue        Int? // Auto-calculé : amountPaid - total
   paymentIssue     String? @default("NONE") // NONE | CLIENT_SHORT_MONEY | CLIENT_NO_CHANGE | CLIENT_REFUSES_PAY | WRONG_ADDRESS | CLIENT_NOT_HOME | OTHER
   paymentIssueNote String?
 
@@ -161,18 +168,18 @@ model Order {
   items OrderItem[]
 
   // Timestamps workflow
-  createdAt     DateTime   @default(now())
-  confirmedAt   DateTime?
-  preparedAt    DateTime?
-  readyAt       DateTime?
-  pickedUpAt    DateTime?
-  deliveredAt   DateTime?
-  cancelledAt   DateTime?
-  cancelReason  String?
+  createdAt    DateTime  @default(now())
+  confirmedAt  DateTime?
+  preparedAt   DateTime?
+  readyAt      DateTime?
+  pickedUpAt   DateTime?
+  deliveredAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
 
   notes         String?
-  paymentMethod String      @default("CASH") // CASH only
-  paymentStatus String      @default("PENDING") // PENDING | PAID | PARTIAL | REFUNDED | OFFERED
+  paymentMethod String  @default("CASH") // CASH only
+  paymentStatus String  @default("PENDING") // PENDING | PAID | PARTIAL | REFUNDED | OFFERED
 
   // Traçabilité
   sourceTempId  String? // ID Redis de l'OrderTemp d'origine
@@ -192,8 +199,11 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
-  price     Int    // Prix au moment de la commande (centimes)
+  price     Int // Prix au moment de la commande (centimes)
   notes     String?
+
+  // Sauces choisies pour cet item
+  sauces OrderItemSauce[]
 
   @@map("order_items")
 }
@@ -201,11 +211,11 @@ model OrderItem {
 // ==================== ZONES LIVRAISON ====================
 model DeliveryZone {
   id         String   @id @default(uuid())
-  name       String   // "Ville", "Hors Ville"
-  dayFee     Int      // Centimes
-  nightFee   Int      // Centimes
-  startNight String   // "19:00"
-  endNight   String   // "23:59"
+  name       String // "Ville", "Hors Ville"
+  dayFee     Int // Centimes
+  nightFee   Int // Centimes
+  startNight String // "19:00"
+  endNight   String // "23:59"
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
 
@@ -243,11 +253,99 @@ model DailyStats {
   @@map("daily_stats")
 }
 
+// ==================== SAUCES ====================
+model Sauce {
+  id          String   @id @default(uuid())
+  name        String // Ex: "Sauce Algérienne"
+  nameAr      String? // Ex: "صلصة جزائرية"
+  isAvailable Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  // Relation avec commandes
+  orderItemSauces OrderItemSauce[]
+
+  @@map("sauces")
+}
+
+// Pivot: Sauces choisies pour un item de commande
+model OrderItemSauce {
+  id          String    @id @default(uuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  sauceId     String
+  sauce       Sauce     @relation(fields: [sauceId], references: [id])
+
+  @@map("order_item_sauces")
+}
+
+// ==================== INVENTAIRE - PRODUITS D'ACHAT ====================
+model InventoryProduct {
+  id       String  @id @default(uuid())
+  name     String // "Coca Cola 1.5L"
+  nameAr   String?
+  supplier String // "Hamoud Boualem"
+  category String // "Boissons", "Viandes", "Pain", etc.
+  unit     String // "carton", "kg", "pièce", "litre"
+
+  // Prix
+  purchasePrice Int // Prix d'achat unitaire (centimes)
+  sellingPrice  Int // Prix de vente unitaire (centimes)
+
+  // Stock
+  currentStock Float @default(0) // Stock actuel
+  minStock     Float @default(0) // Alerte si < X
+
+  // Relation avec produit menu (optionnel - pour boissons)
+  linkedProductId String?  @unique
+  linkedProduct   Product? @relation(fields: [linkedProductId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  purchases Purchase[]
+
+  @@index([category])
+  @@index([supplier])
+  @@map("inventory_products")
+}
+
+// ==================== INVENTAIRE - ACHATS ====================
+model Purchase {
+  id             String @id @default(uuid())
+  purchaseNumber String @unique // ACH-YYMMDD-XXX
+
+  productId String
+  product   InventoryProduct @relation(fields: [productId], references: [id])
+
+  quantity    Float // 10 cartons, 5.5 kg, etc.
+  unitPrice   Int // Prix unitaire d'achat (centimes)
+  totalAmount Int // quantity × unitPrice
+
+  supplier String // Nom grossiste
+
+  // Paiement
+  isPaid        Boolean   @default(false)
+  paidAt        DateTime?
+  paymentMethod String? // "Espèces", "Virement", "Chèque"
+
+  notes         String?
+  invoiceNumber String?
+  purchaseDate  DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([isPaid])
+  @@index([supplier])
+  @@index([purchaseDate])
+  @@map("purchases")
+}
+
 // ==================== PARAMÈTRES SYSTÈME ====================
 model SystemSettings {
   id        String   @id @default(uuid())
   key       String   @unique // "MAIN_PROMO_BANNER", "COVER_IMAGE"
-  value     String   // JSON string
+  value     String // JSON string
   updatedAt DateTime @updatedAt
 
   @@map("system_settings")

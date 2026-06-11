@@ -18,6 +18,10 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.deliveryZone.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.orderItemSauce.deleteMany();
+  await prisma.sauce.deleteMany();
+  await prisma.purchase.deleteMany();
+  await prisma.inventoryProduct.deleteMany();
 
   // ==================== ADMIN ====================
   const admin = await prisma.user.create({
@@ -250,6 +254,21 @@ async function main() {
     await prisma.product.create({ data: p });
   }
   console.log(`✅ ${products.length} products created`);
+
+  // ==================== SAUCES ====================
+  const sauces = [
+    { name: 'Sauce Algérienne', nameAr: 'صلصة جزائرية', sortOrder: 1, isAvailable: true },
+    { name: 'Harissa', nameAr: 'هريسة', sortOrder: 2, isAvailable: true },
+    { name: 'Mayonnaise', nameAr: 'مايونيز', sortOrder: 3, isAvailable: true },
+    { name: 'Ketchup', nameAr: 'كاتشب', sortOrder: 4, isAvailable: true },
+    { name: 'Moutarde', nameAr: 'خردل', sortOrder: 5, isAvailable: true },
+    { name: 'Sauce Blanche', nameAr: 'صلصة بيضاء', sortOrder: 6, isAvailable: true },
+  ];
+
+  for (const s of sauces) {
+    await prisma.sauce.create({ data: s });
+  }
+  console.log(`✅ ${sauces.length} sauces created`);
 
   console.log('🎉 Seeding complete!');
 }

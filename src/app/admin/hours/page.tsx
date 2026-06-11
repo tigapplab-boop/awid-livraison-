@@ -99,10 +99,11 @@ export default function OpeningHoursPage() {
 
   const handleDayChange = (day: string, field: keyof DayHours, value: string | boolean) => {
     if (!hours) return
+    const currentDay = hours[day as keyof OpeningHours] as DayHours
     setHours({
       ...hours,
       [day]: {
-        ...hours[day as keyof OpeningHours],
+        ...currentDay,
         [field]: value,
       },
     })
