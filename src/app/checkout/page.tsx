@@ -71,9 +71,11 @@ export default function CheckoutPage() {
           const status = isRestaurantOpen(hours);
           setRestaurantStatus(status);
           
-          // Show modal if closed
+          // Show modal ONLY if closed AND hours check is enabled
           if (!status.isOpen && hours.enabled) {
             setShowClosedModal(true);
+          } else {
+            setShowClosedModal(false);
           }
         }
       } catch (err) {

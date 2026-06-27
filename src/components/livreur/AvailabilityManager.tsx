@@ -6,7 +6,7 @@
 // ========================================
 
 import { useState } from 'react'
-import { Clock, Calendar, Check, X } from 'lucide-react'
+import { Clock, Calendar, Check, X, Copy } from 'lucide-react'
 
 interface AvailabilitySchedule {
   [key: string]: { start: string; end: string; enabled: boolean }
@@ -49,6 +49,7 @@ export default function AvailabilityManager({
     }
   )
   const [saving, setSaving] = useState(false)
+  const [copyFromDay, setCopyFromDay] = useState<string | null>(null)
 
   const handleDayToggle = (day: string) => {
     setSchedule(prev => ({
@@ -62,6 +63,20 @@ export default function AvailabilityManager({
       ...prev,
       [day]: { ...prev[day], [field]: value },
     }))
+  }
+
+  const handleCopyToAllDays = (sourceDay: string) => {
+    const sourceSchedule = schedule[sourceDay]
+    if (!sourceSchedule) return
+
+    const newSchedule = { ...schedule }
+    DAYS.forEach(({ key }) => {
+      if (key !== sourceDay) {
+        newSchedule[key] = { ...sourceSchedule }
+      }
+    })
+    setSchedule(newSchedule)
+    setCopyFromDay(null)
   }
 
   const handleSave = async () => {
@@ -100,6 +115,14 @@ export default function AvailabilityManager({
 
         {/* Content */}
         <div className="p-6 space-y-4">
+          {/* Info Banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+            <Copy className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-blue-800">
+              <strong>Astuce:</strong> Configurez un jour puis cliquez sur le bouton <strong>Copier</strong> pour appliquer les mêmes horaires à toute la semaine.
+            </p>
+          </div>
+
           {DAYS.map(({ key, label }) => (
             <div key={key} className="border border-stone-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
@@ -112,6 +135,17 @@ export default function AvailabilityManager({
                   />
                   <span className="font-semibold text-stone-900">{label}</span>
                 </label>
+                
+                {schedule[key]?.enabled && (
+                  <button
+                    onClick={() => handleCopyToAllDays(key)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    title="Copier ces horaires sur tous les jours"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Copier partout
+                  </button>
+                )}
               </div>
 
               {schedule[key]?.enabled && (

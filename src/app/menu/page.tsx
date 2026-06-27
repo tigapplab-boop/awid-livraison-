@@ -393,6 +393,33 @@ function MenuContent() {
       {/* Restaurant Info Section */}
       <RestaurantInfo isRTL={isRTL} />
 
+      {/* Client Orders Link */}
+      <div className="px-4 py-4 border-t border-stone-200 bg-white/30">
+        <Link
+          href="/mes-commandes"
+          className="block max-w-lg mx-auto bg-white border-2 border-bm-primary/20 rounded-xl p-4 hover:border-bm-primary transition-colors"
+        >
+          <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className="w-10 h-10 bg-bm-primary/10 rounded-full flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-bm-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </div>
+            <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+              <p className="font-semibold text-stone-800">
+                {isRTL ? 'طلباتي' : 'Mes Commandes'}
+              </p>
+              <p className="text-xs text-stone-500">
+                {isRTL ? 'عرض سجل الطلبات' : 'Voir l\'historique de vos commandes'}
+              </p>
+            </div>
+            <svg className={`w-5 h-5 text-stone-400 ${isRTL ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+      </div>
+
       {/* Floating Cart Bar */}
       <div className={`
         fixed bottom-0 left-0 right-0 p-4 z-50
