@@ -11,16 +11,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Minus, Plus, Trash2, ShoppingCart, Phone, Store, Send, AlertCircle, Printer } from 'lucide-react'
-import type { CategoryWithProducts, DeliveryZone } from '@/bm/types'
+import type { CategoryWithProducts, DeliveryZone, Product } from '@/bm/types'
 import { formatDA } from '@/bm/lib/format'
 import KitchenTicket from '@/components/pos/KitchenTicket'
 import { usePrint } from '@/hooks/use-print'
+import SupplementPicker from '@/components/SupplementPicker'
+import SaucePicker from '@/components/menu/SaucePicker'
 
 interface CartItem {
-  productId: string
-  name: string
-  price: number
+  product: Product
   quantity: number
+  attachedToProductId?: string
+}
+
+// Category names detection
+const SUPPLEMENT_CATEGORY_NAMES = ['Suppléments', 'Supplements', 'suppléments', 'supplements']
+const SAUCE_CATEGORY_NAMES = ['Sauces', 'sauces', 'Sauce', 'sauce', 'صلصة', 'صلصات']
+
+function isSupplement(product: Product, categories: CategoryWithProducts[]): boolean {
+  const category = categories.find(c => c.id === product.categoryId)
+  return category ? SUPPLEMENT_CATEGORY_NAMES.includes(category.name) : false
+}
+
+function isSauce(product: Product, categories: CategoryWithProducts[]): boolean {
+  const category = categories.find(c => c.id === product.categoryId)
+  return category ? SAUCE_CATEGORY_NAMES.includes(category.name) : false
+}
+
+function isBurger(product: Product, categories: CategoryWithProducts[]): boolean {
+  const category = categories.find(c => c.id === product.categoryId)
+  return category ? (
+    category.name.toLowerCase().includes('burger') ||
+    category.name.toLowerCase().includes('sandwich')
+  ) : false
 }
 
 interface Livreur {
@@ -49,6 +72,12 @@ export default function POSPage() {
   const [selectedLivreur, setSelectedLivreur] = useState('')
   const [orderNotes, setOrderNotes] = useState('')
   const [lastPOSOrder, setLastPOSOrder] = useState<any>(null)
+
+  // Supplement/Sauce picker state
+  const [supplementPickerOpen, setSupplementPickerOpen] = useState(false)
+  const [pendingSupplement, setPendingSupplement] = useState<Product | null>(null)
+  const [saucePickerOpen, setSaucePickerOpen] = useState(false)
+  const [pendingSauce, setPendingSauce] = useState<{ id: string; name: string; nameAr: string | null } | null>(null)
 
   // Printing
   const ticketRef = useRef<HTMLDivElement>(null)
@@ -84,31 +113,134 @@ export default function POSPage() {
     fetchData()
   }, [fetchData])
 
-  const addToCart = (product: { id: string; name: string; price: number }) => {
+  const addToCart = (product: Product) => {
+    // Check if product is a supplement
+    const isSup = isSupplement(product, categories)
+    if (isSup) {
+      handleAddSupplement(product)
+      return
+    }
+
+    // Check if product is a sauce
+    const isSau = isSauce(product, categories)
+    if (isSau) {
+      handleAddSauce({ id: product.id, name: product.name, nameAr: product.nameAr })
+      return
+    }
+
+    // Regular product (burger, etc.) - add directly
+    setCart((prev) => [...prev, { product, quantity: 1 }])
+  }
+
+  const handleAddSupplement = (product: Product) => {
+    const burgersInCart = cart.filter((item) => !item.attachedToProductId)
+    if (burgersInCart.length === 0) {
+      // No burgers, add standalone
+      setCart((prev) => [...prev, { product, quantity: 1 }])
+      return
+    }
+    if (burgersInCart.length === 1) {
+      // Only one burger, attach automatically
+      setCart((prev) => [...prev, { product, quantity: 1, attachedToProductId: burgersInCart[0].product.id }])
+      return
+    }
+    // Multiple burgers, show picker
+    setPendingSupplement(product)
+    setSupplementPickerOpen(true)
+  }
+
+  const handleAddSauce = (sauce: { id: string; name: string; nameAr: string | null }) => {
+    const burgersInCart = cart.filter((item) => {
+      return isBurger(item.product, categories)
+    })
+
+    if (burgersInCart.length === 0) {
+      // No burgers, add standalone
+      const product = categories.flatMap(c => c.products).find(p => p.id === sauce.id)
+      if (product) {
+        setCart((prev) => [...prev, { product, quantity: 1 }])
+      }
+      return
+    }
+
+    if (burgersInCart.length === 1) {
+      // Only one burger, attach automatically
+      const product = categories.flatMap(c => c.products).find(p => p.id === sauce.id)
+      if (product) {
+        setCart((prev) => [...prev, { product, quantity: 1, attachedToProductId: burgersInCart[0].product.id }])
+      }
+      return
+    }
+
+    // Multiple burgers, show picker
+    setPendingSauce(sauce)
+    setSaucePickerOpen(true)
+  }
+
+  const handleSupplementSelect = (attachedToProductId: string) => {
+    if (pendingSupplement) {
+      setCart((prev) => [...prev, { product: pendingSupplement, quantity: 1, attachedToProductId }])
+    }
+    setPendingSupplement(null)
+  }
+
+  const handleSupplementSkip = () => {
+    if (pendingSupplement) {
+      setCart((prev) => [...prev, { product: pendingSupplement, quantity: 1 }])
+    }
+    setPendingSupplement(null)
+  }
+
+  const handleSauceSelect = (attachedToProductId: string) => {
+    if (pendingSauce) {
+      const product = categories.flatMap(c => c.products).find(p => p.id === pendingSauce.id)
+      if (product) {
+        setCart((prev) => [...prev, { product, quantity: 1, attachedToProductId }])
+      }
+    }
+    setPendingSauce(null)
+  }
+
+  const handleSauceSkip = () => {
+    if (pendingSauce) {
+      const product = categories.flatMap(c => c.products).find(p => p.id === pendingSauce.id)
+      if (product) {
+        setCart((prev) => [...prev, { product, quantity: 1 }])
+      }
+    }
+    setPendingSauce(null)
+  }
+
+  const updateQuantity = (itemIndex: number, delta: number) => {
     setCart((prev) => {
-      const existing = prev.find((i) => i.productId === product.id)
-      if (existing) {
-        return prev.map((i) =>
-          i.productId === product.id ? { ...i, quantity: i.quantity + 1 } : i
+      const newCart = [...prev]
+      const item = newCart[itemIndex]
+      const newQuantity = item.quantity + delta
+      
+      if (newQuantity <= 0) {
+        // Remove item and any supplements/sauces attached to it
+        const productId = item.product.id
+        return newCart.filter((_, idx) => 
+          idx !== itemIndex && newCart[idx].attachedToProductId !== productId
         )
       }
-      return [...prev, { productId: product.id, name: product.name, price: product.price, quantity: 1 }]
+      
+      newCart[itemIndex] = { ...item, quantity: newQuantity }
+      return newCart
     })
   }
 
-  const updateQuantity = (productId: string, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((i) => (i.productId === productId ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i))
-        .filter((i) => i.quantity > 0)
-    )
+  const removeFromCart = (itemIndex: number) => {
+    setCart((prev) => {
+      const productId = prev[itemIndex].product.id
+      // Remove item and any supplements/sauces attached to it
+      return prev.filter((_, idx) => 
+        idx !== itemIndex && prev[idx].attachedToProductId !== productId
+      )
+    })
   }
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((i) => i.productId !== productId))
-  }
-
-  const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const subtotal = cart.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
 
   const selectedZoneData = zones.find((z) => z.id === selectedZone)
   const deliveryFee = mode === 'phone' && selectedZoneData ? selectedZoneData.dayFee : 0
@@ -166,7 +298,11 @@ export default function POSPage() {
           clientAddress: clientAddress.trim(),
           deliveryZone: selectedZoneData?.name,
           livreurId: selectedLivreur,
-          items: cart.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          items: cart.map((i) => ({ 
+            productId: i.product.id, 
+            quantity: i.quantity,
+            attachedToProductId: i.attachedToProductId 
+          })),
           notes: orderNotes.trim() || undefined,
         }),
       })
@@ -203,7 +339,11 @@ export default function POSPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          items: cart.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          items: cart.map((i) => ({ 
+            productId: i.product.id, 
+            quantity: i.quantity,
+            attachedToProductId: i.attachedToProductId 
+          })),
           notes: 'COMMANDE SUR PLACE - POS',
         }),
       })
@@ -345,38 +485,101 @@ export default function POSPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {cart.map((item) => (
-                      <div key={item.productId} className="flex items-center gap-2 bg-stone-50 rounded-lg p-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-stone-800 truncate">{item.name}</p>
-                          <p className="text-xs text-stone-500">{formatDA(item.price)} × {item.quantity}</p>
+                    {cart.map((item, idx) => {
+                      // Skip attached items (they'll be shown with their parent)
+                      if (item.attachedToProductId) return null
+
+                      // Find attached supplements/sauces for this item
+                      const attachedItems = cart.filter(
+                        (ci) => ci.attachedToProductId === item.product.id
+                      )
+
+                      return (
+                        <div key={idx}>
+                          {/* Main Item */}
+                          <div className="flex items-center gap-2 bg-stone-50 rounded-lg p-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-stone-800 truncate">{item.product.name}</p>
+                              <p className="text-xs text-stone-500">{formatDA(item.product.price)} × {item.quantity}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => updateQuantity(idx, -1)}
+                                className="qty-btn h-8 w-8 text-sm"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                              <button
+                                onClick={() => updateQuantity(idx, 1)}
+                                className="qty-btn h-8 w-8 text-sm"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <span className="font-bold text-sm text-stone-800 w-16 text-right">
+                              {formatDA(item.product.price * item.quantity)}
+                            </span>
+                            <button
+                              onClick={() => removeFromCart(idx)}
+                              className="p-1 text-red-400 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {/* Attached Supplements/Sauces */}
+                          {attachedItems.length > 0 && (
+                            <div className="ml-6 mt-1 space-y-1">
+                              {attachedItems.map((attached, attachedIdx) => {
+                                const actualIdx = cart.findIndex(
+                                  (ci) => ci === attached
+                                )
+                                return (
+                                  <div
+                                    key={actualIdx}
+                                    className="flex items-center gap-2 bg-bm-primary-50/50 rounded-lg p-2 text-xs border-l-2 border-bm-primary"
+                                  >
+                                    <span className="text-bm-primary">+</span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-stone-700 truncate">
+                                        {attached.product.name}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => updateQuantity(actualIdx, -1)}
+                                        className="qty-btn h-6 w-6 text-xs"
+                                      >
+                                        <Minus className="h-2 w-2" />
+                                      </button>
+                                      <span className="w-6 text-center font-bold text-xs">
+                                        {attached.quantity}
+                                      </span>
+                                      <button
+                                        onClick={() => updateQuantity(actualIdx, 1)}
+                                        className="qty-btn h-6 w-6 text-xs"
+                                      >
+                                        <Plus className="h-2 w-2" />
+                                      </button>
+                                    </div>
+                                    <span className="font-bold text-xs text-stone-700 w-12 text-right">
+                                      {formatDA(attached.product.price * attached.quantity)}
+                                    </span>
+                                    <button
+                                      onClick={() => removeFromCart(actualIdx)}
+                                      className="p-0.5 text-red-400 hover:text-red-600"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => updateQuantity(item.productId, -1)}
-                            className="qty-btn h-8 w-8 text-sm"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.productId, 1)}
-                            className="qty-btn h-8 w-8 text-sm"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
-                        <span className="font-bold text-sm text-stone-800 w-16 text-right">
-                          {formatDA(item.price * item.quantity)}
-                        </span>
-                        <button
-                          onClick={() => removeFromCart(item.productId)}
-                          className="p-1 text-red-400 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </ScrollArea>
@@ -509,6 +712,28 @@ export default function POSPage() {
           </div>
         )}
       </div>
+
+      {/* Supplement Picker */}
+      <SupplementPicker
+        open={supplementPickerOpen}
+        onOpenChange={setSupplementPickerOpen}
+        supplement={pendingSupplement}
+        onSelect={handleSupplementSelect}
+        onSkip={handleSupplementSkip}
+      />
+
+      {/* Sauce Picker */}
+      {pendingSauce && (
+        <SaucePicker
+          open={saucePickerOpen}
+          onOpenChange={setSaucePickerOpen}
+          sauce={pendingSauce}
+          burgersInCart={cart.filter((item) => isBurger(item.product, categories))}
+          onSelect={handleSauceSelect}
+          onSkip={handleSauceSkip}
+          language="fr"
+        />
+      )}
     </div>
   )
 }

@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Calculate subtotal from products
-    const orderItems = items.map((item: { productId: string; quantity: number }) => {
+    const orderItems = items.map((item: { productId: string; quantity: number; attachedToProductId?: string }) => {
       const product = productMap.get(item.productId)
       if (!product) {
         throw new Error(`Product ${item.productId} not found`)
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
         productId: item.productId,
         quantity: item.quantity,
         price: product.price,
+        attachedToProductId: item.attachedToProductId || null,
       }
     })
 
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
+            attachedToProductId: item.attachedToProductId,
           },
         })
       }

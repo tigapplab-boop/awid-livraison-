@@ -205,6 +205,9 @@ model OrderItem {
   price     Int // Prix au moment de la commande (centimes)
   notes     String?
 
+  // Pour les suppléments/sauces : à quel produit cet item est attaché
+  attachedToProductId String?
+
   // Sauces choisies pour cet item
   sauces OrderItemSauce[]
 
