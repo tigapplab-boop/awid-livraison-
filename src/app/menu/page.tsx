@@ -7,16 +7,17 @@ import { getProducts } from '@/bm/lib/api';
 import { useCart, isSupplement, registerSupplementCategoryIds } from '@/bm/lib/cart';
 import type { CategoryWithProducts, Product } from '@/bm/types';
 import SupplementPicker from '@/components/SupplementPicker';
-
 import { ProductCard } from '@/components/menu/ProductCard';
 import { CategoryTabs } from '@/components/menu/CategoryTabs';
 import { PromoBanner } from '@/components/menu/PromoBanner';
 import { RestaurantInfo } from '@/components/menu/RestaurantInfo';
+import SaucePicker from '@/components/menu/SaucePicker';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
 
 // Category names that are considered "supplement" categories
 const SUPPLEMENT_CATEGORY_NAMES = ['Suppléments', 'Supplements', 'suppléments', 'supplements'];
+const SAUCE_CATEGORY_NAMES = ['Sauces', 'sauces', 'Sauce', 'sauce', 'صلصة', 'صلصات'];
 
 function MenuSkeleton() {
   return (
@@ -63,6 +64,8 @@ function MenuContent() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [supplementPickerOpen, setSupplementPickerOpen] = useState(false);
   const [pendingSupplement, setPendingSupplement] = useState<Product | null>(null);
+  const [saucePickerOpen, setSaucePickerOpen] = useState(false);
+  const [pendingSauce, setPendingSauce] = useState<{ id: string; name: string; nameAr: string | null } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [orderBannerInfo, setOrderBannerInfo] = useState<{ orderId: string; orderNumber: string } | null>(null);
   const [showOrderBanner, setShowOrderBanner] = useState(false);
@@ -204,7 +207,13 @@ function MenuContent() {
     setAnimatingProduct(productId);
     setTimeout(() => setAnimatingProduct(null), 300);
 
-    if (isSupplement(product)) {
+    // Check if product is a sauce
+    const category = categories.find(c => c.id === product.categoryId);
+    const isSauce = category && SAUCE_CATEGORY_NAMES.includes(category.name);
+
+    if (isSauce) {
+      handleAddSauce({ id: product.id, name: product.name, nameAr: product.nameAr });
+    } else if (isSupplement(product)) {
       handleAddSupplement(product);
     } else {
       addItem(product);
@@ -237,6 +246,32 @@ function MenuContent() {
     setSupplementPickerOpen(true);
   };
 
+  const handleAddSauce = (sauce: { id: string; name: string; nameAr: string | null }) => {
+    const burgersInCart = items.filter((item) => {
+      const category = categories.find(c => c.id === item.product.categoryId);
+      return category && (
+        category.name.toLowerCase().includes('burger') ||
+        category.name.toLowerCase().includes('sandwich')
+      );
+    });
+
+    if (burgersInCart.length === 0) {
+      setToastMessage(isRTL ? 'أضف برجر أولاً قبل اختيار الصلصة' : 'Ajoutez d\'abord un burger avant de choisir une sauce');
+      return;
+    }
+
+    if (burgersInCart.length === 1) {
+      const product = categories.flatMap(c => c.products).find(p => p.id === sauce.id);
+      if (product) {
+        addItem(product, 1, burgersInCart[0].product.id);
+      }
+      return;
+    }
+
+    setPendingSauce(sauce);
+    setSaucePickerOpen(true);
+  };
+
   const handleSupplementSelect = (attachedToProductId: string) => {
     if (pendingSupplement) {
       addItem(pendingSupplement, 1, attachedToProductId);
@@ -249,6 +284,26 @@ function MenuContent() {
       addItem(pendingSupplement, 1);
     }
     setPendingSupplement(null);
+  };
+
+  const handleSauceSelect = (attachedToProductId: string) => {
+    if (pendingSauce) {
+      const product = categories.flatMap(c => c.products).find(p => p.id === pendingSauce.id);
+      if (product) {
+        addItem(product, 1, attachedToProductId);
+      }
+    }
+    setPendingSauce(null);
+  };
+
+  const handleSauceSkip = () => {
+    if (pendingSauce) {
+      const product = categories.flatMap(c => c.products).find(p => p.id === pendingSauce.id);
+      if (product) {
+        addItem(product, 1);
+      }
+    }
+    setPendingSauce(null);
   };
 
   const getProductQuantity = (productId: string) => {
@@ -522,6 +577,25 @@ function MenuContent() {
         onSelect={handleSupplementSelect}
         onSkip={handleSupplementSkip}
       />
+
+      {/* Sauce Picker */}
+      {pendingSauce && (
+        <SaucePicker
+          open={saucePickerOpen}
+          onOpenChange={setSaucePickerOpen}
+          sauce={pendingSauce}
+          burgersInCart={items.filter((item) => {
+            const category = categories.find(c => c.id === item.product.categoryId);
+            return category && (
+              category.name.toLowerCase().includes('burger') ||
+              category.name.toLowerCase().includes('sandwich')
+            );
+          })}
+          onSelect={handleSauceSelect}
+          onSkip={handleSauceSkip}
+          language={locale === 'ar' ? 'ar' : 'fr'}
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Inter, Poppins, Cairo } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/bm/lib/cart";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -64,6 +65,7 @@ export default function RootLayout({
           <main className="min-h-screen">{children}</main>
         </CartProvider>
         <PwaInstallPrompt />
+        <PushNotificationPrompt />
         <script
           dangerouslySetInnerHTML={{
             __html: `
