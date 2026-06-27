@@ -214,6 +214,10 @@ export async function PATCH(
       return NextResponse.json({
         order: fullOrder,
         clientToken: result.clientToken,
+      }, {
+        headers: {
+          'Set-Cookie': `bm_client_token=${result.clientToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${60 * 60 * 24 * 365}`, // 1 year
+        },
       })
     } catch (error) {
       console.error('[OrdersTemp/Validate] Transaction error:', error)
