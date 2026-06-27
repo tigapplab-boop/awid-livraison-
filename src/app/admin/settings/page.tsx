@@ -162,7 +162,7 @@ export default function AdminSettingsPage() {
                       onChange={(e) =>
                         setRestaurantInfo({ ...restaurantInfo, phone: e.target.value })
                       }
-                      placeholder="+213 26 XX XX XX"
+                      placeholder="+213 791643294"
                       className="flex-1"
                     />
                   </div>
