@@ -5,6 +5,32 @@ import { jwtVerify } from 'jose'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Check maintenance mode for client-facing routes
+  if (
+    !pathname.startsWith('/admin') &&
+    !pathname.startsWith('/api/admin') &&
+    !pathname.startsWith('/livreur') &&
+    !pathname.startsWith('/maintenance') &&
+    !pathname.startsWith('/_next') &&
+    !pathname.startsWith('/favicon')
+  ) {
+    try {
+      const maintenanceRes = await fetch(
+        new URL('/api/settings/maintenance', request.url).toString(),
+        { cache: 'no-store' }
+      )
+      
+      if (maintenanceRes.ok) {
+        const data = await maintenanceRes.json()
+        if (data.enabled === true) {
+          return NextResponse.redirect(new URL('/maintenance', request.url))
+        }
+      }
+    } catch (error) {
+      console.error('[Middleware] Maintenance check error:', error)
+    }
+  }
+
   if (pathname.startsWith('/admin') || pathname.startsWith('/livreur')) {
     // Ignore login pages
     if (pathname === '/admin/login' || pathname === '/livreur/login') {

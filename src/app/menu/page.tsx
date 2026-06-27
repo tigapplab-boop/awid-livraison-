@@ -11,6 +11,7 @@ import SupplementPicker from '@/components/SupplementPicker';
 import { ProductCard } from '@/components/menu/ProductCard';
 import { CategoryTabs } from '@/components/menu/CategoryTabs';
 import { PromoBanner } from '@/components/menu/PromoBanner';
+import { RestaurantInfo } from '@/components/menu/RestaurantInfo';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
 
@@ -388,6 +389,9 @@ function MenuContent() {
           </div>
         )}
       </div>
+
+      {/* Restaurant Info Section */}
+      <RestaurantInfo isRTL={isRTL} />
 
       {/* Floating Cart Bar */}
       <div className={`

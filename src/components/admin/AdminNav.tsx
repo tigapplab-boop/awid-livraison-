@@ -13,30 +13,45 @@ import {
   Megaphone,
   FileText,
   LogOut,
-  Clock
+  Clock,
+  Star,
+  Settings,
+  Warehouse
 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin/dashboard', label: 'Commandes', icon: LayoutDashboard },
   { href: '/admin/pos', label: 'POS', icon: ShoppingCart },
   { href: '/admin/products', label: 'Produits', icon: Package },
+  { href: '/admin/sauces', label: 'Sauces', icon: Package },
+  { href: '/admin/inventory', label: 'Inventaire', icon: Warehouse },
   { href: '/admin/promo', label: 'Promos', icon: Megaphone },
   { href: '/admin/hours', label: 'Horaires', icon: Clock },
   { href: '/admin/livreurs', label: 'Livreurs', icon: Users },
   { href: '/admin/zones', label: 'Zones', icon: MapPin },
+  { href: '/admin/reviews', label: 'Avis', icon: Star },
   { href: '/admin/statistics', label: 'Stats', icon: BarChart3 },
   { href: '/admin/reports', label: 'Rapports', icon: FileText },
   { href: '/admin/finance', label: 'Finance', icon: DollarSign },
+  { href: '/admin/settings', label: 'Paramètres', icon: Settings },
 ]
 
 export default function AdminNav() {
   const pathname = usePathname()
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('bm_token')
-      localStorage.removeItem('bm_user')
-      window.location.href = '/menu'
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear auth cookie
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('bm_token')
+        localStorage.removeItem('bm_user')
+        window.location.href = '/menu'
+      }
     }
   }
 

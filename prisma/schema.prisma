@@ -48,6 +48,7 @@ model Client {
   tokens    ClientToken[]
   addresses ClientAddress[]
   orders    Order[]
+  reviews   Review[]
 
   @@map("clients")
 }
@@ -123,6 +124,7 @@ model Product {
 
   orderItems       OrderItem[]
   inventoryProduct InventoryProduct?
+  reviews          Review[]
 
   @@map("products")
 }
@@ -165,7 +167,8 @@ model Order {
   paymentIssueNote String?
 
   // Relations
-  items OrderItem[]
+  items   OrderItem[]
+  reviews Review[]
 
   // Timestamps workflow
   createdAt    DateTime  @default(now())
@@ -349,4 +352,22 @@ model SystemSettings {
   updatedAt DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+// ==================== AVIS CLIENTS ====================
+model Review {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id])
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  type        String // PRODUCT | SERVICE
+  rating      Int // 1-5
+  comment     String?
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("reviews")
 }
