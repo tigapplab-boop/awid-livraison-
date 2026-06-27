@@ -242,7 +242,7 @@ function SettingsSection({ onClose }: { onClose: () => void }) {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Settings className="w-6 h-6 text-bm-primary" />
-            <h1 className="text-xl font-extrabold text-stone-900">Paramètres</h1>
+            <h1 className="text-xl font-extrabold text-stone-900">Gestion des Comptes</h1>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-stone-100 rounded-lg transition-colors">
             <X className="w-5 h-5 text-stone-500" />
