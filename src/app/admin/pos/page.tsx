@@ -382,19 +382,17 @@ export default function POSPage() {
   }
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-        <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900">Point de Vente</h1>
+    <div className="p-4 lg:p-6 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-extrabold text-stone-900">Point de Vente</h1>
         {lastPOSOrder && (
           <Button
             onClick={() => print()}
             variant="outline"
-            className="gap-2 border-bm-primary text-bm-primary hover:bg-bm-primary-50 w-full sm:w-auto text-sm"
-            size="sm"
+            className="gap-2 border-bm-primary text-bm-primary hover:bg-bm-primary-50"
           >
             <Printer className="h-4 w-4" />
-            <span className="hidden sm:inline">Réimprimer dernier ticket</span>
-            <span className="sm:hidden">Réimprimer</span>
+            Réimprimer dernier ticket
           </Button>
         )}
       </div>
@@ -409,31 +407,27 @@ export default function POSPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
         {/* Product Grid */}
         <div className="lg:col-span-2 flex flex-col min-h-0">
-          <Tabs value={mode} onValueChange={(v) => setMode(v as 'pos' | 'phone')} className="mb-2 sm:mb-3">
-            <TabsList className="h-10 sm:h-12 w-full grid grid-cols-2">
-              <TabsTrigger value="pos" className="min-h-[40px] sm:min-h-[44px] px-2 sm:px-4 gap-1 sm:gap-2 text-sm">
-                <Store className="h-3 w-3 sm:h-4 sm:w-4" /> 
-                <span className="hidden xs:inline">Sur Place</span>
-                <span className="xs:hidden">POS</span>
+          <Tabs value={mode} onValueChange={(v) => setMode(v as 'pos' | 'phone')} className="mb-3">
+            <TabsList className="h-12">
+              <TabsTrigger value="pos" className="min-h-[44px] px-4 gap-2">
+                <Store className="h-4 w-4" /> Sur Place
               </TabsTrigger>
-              <TabsTrigger value="phone" className="min-h-[40px] sm:min-h-[44px] px-2 sm:px-4 gap-1 sm:gap-2 text-sm">
-                <Phone className="h-3 w-3 sm:h-4 sm:w-4" /> 
-                <span className="hidden xs:inline">Téléphone</span>
-                <span className="xs:hidden">Tel</span>
+              <TabsTrigger value="phone" className="min-h-[44px] px-4 gap-2">
+                <Phone className="h-4 w-4" /> Téléphone
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
           {/* Category Tabs */}
-          <div className="category-tabs mb-2 sm:mb-3 -mx-1">
+          <div className="category-tabs mb-3 -mx-1">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`category-tab text-xs sm:text-sm ${activeCategory === cat.id ? 'category-tab-active' : 'category-tab-inactive'}`}
+                className={`category-tab ${activeCategory === cat.id ? 'category-tab-active' : 'category-tab-inactive'}`}
               >
                 {cat.name}
               </button>
@@ -442,29 +436,29 @@ export default function POSPage() {
 
           {/* Products Grid */}
           <ScrollArea className="flex-1">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 pr-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pr-2">
               {categories
                 .find((c) => c.id === activeCategory)
                 ?.products.map((product) => (
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
-                    className="flex flex-col items-center justify-center p-2 sm:p-3 bg-white rounded-xl border-2 border-stone-100 hover:border-bm-primary hover:shadow-md transition-all active:scale-95"
+                    className="flex flex-col items-center justify-center p-3 bg-white rounded-xl border-2 border-stone-100 hover:border-bm-primary hover:shadow-md transition-all active:scale-95"
                   >
                     {/* Product Image */}
                     {product.image ? (
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="w-full aspect-square object-cover rounded-lg mb-1 sm:mb-2"
+                        className="w-full aspect-square object-cover rounded-lg mb-2"
                       />
                     ) : (
-                      <div className="w-full aspect-square bg-stone-100 rounded-lg mb-1 sm:mb-2 flex items-center justify-center">
-                        <span className="text-2xl sm:text-4xl opacity-30">🍔</span>
+                      <div className="w-full aspect-square bg-stone-100 rounded-lg mb-2 flex items-center justify-center">
+                        <span className="text-4xl opacity-30">🍔</span>
                       </div>
                     )}
-                    <span className="font-bold text-stone-800 text-xs sm:text-sm text-center leading-tight line-clamp-2">{product.name}</span>
-                    <span className="text-bm-primary font-extrabold text-sm sm:text-lg mt-1">{formatDA(product.price)}</span>
+                    <span className="font-bold text-stone-800 text-sm text-center leading-tight">{product.name}</span>
+                    <span className="text-bm-primary font-extrabold text-lg mt-1">{formatDA(product.price)}</span>
                   </button>
                 ))}
             </div>
@@ -474,19 +468,19 @@ export default function POSPage() {
         {/* Cart Sidebar */}
         <div className="flex flex-col min-h-0">
           <Card className="flex-1 flex flex-col border-2 border-bm-primary-200 shadow-lg">
-            <CardHeader className="pb-2 sm:pb-3 border-b">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-bm-primary" />
-                <span>Panier</span>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ShoppingCart className="h-5 w-5 text-bm-primary" />
+                Panier
                 {cart.length > 0 && (
-                  <Badge className="bg-bm-primary text-stone-900 ml-auto text-xs">{cart.length}</Badge>
+                  <Badge className="bg-bm-primary text-stone-900 ml-auto">{cart.length}</Badge>
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-              <ScrollArea className="flex-1 px-2 sm:px-4 py-2 sm:py-3">
+              <ScrollArea className="flex-1 px-4 py-3">
                 {cart.length === 0 ? (
-                  <div className="text-center py-8 text-stone-400 text-xs sm:text-sm">
+                  <div className="text-center py-8 text-stone-400 text-sm">
                     Panier vide
                   </div>
                 ) : (

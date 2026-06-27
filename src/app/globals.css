@@ -399,66 +399,6 @@
   padding-right: env(safe-area-inset-right);
 }
 
-/* Responsive text sizing */
-.text-responsive-xs { font-size: clamp(0.625rem, 2vw, 0.75rem); }
-.text-responsive-sm { font-size: clamp(0.75rem, 2.5vw, 0.875rem); }
-.text-responsive-base { font-size: clamp(0.875rem, 3vw, 1rem); }
-.text-responsive-lg { font-size: clamp(1rem, 3.5vw, 1.125rem); }
-.text-responsive-xl { font-size: clamp(1.125rem, 4vw, 1.25rem); }
-.text-responsive-2xl { font-size: clamp(1.25rem, 5vw, 1.5rem); }
-.text-responsive-3xl { font-size: clamp(1.5rem, 6vw, 1.875rem); }
-
-/* Container responsive padding */
-.container-responsive {
-  padding-left: clamp(1rem, 4vw, 2rem);
-  padding-right: clamp(1rem, 4vw, 2rem);
-}
-
-/* Max width containers for readability */
-.content-max-w {
-  max-width: min(100%, 1200px);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Prevent horizontal scroll */
-html, body {
-  overflow-x: hidden;
-  width: 100%;
-  position: relative;
-}
-
-/* Better touch targets for mobile */
-@media (max-width: 768px) {
-  button, a, input, select, textarea {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
-/* Ensure images don't overflow */
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Responsive grid utilities */
-.grid-responsive-2 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 1rem;
-}
-.grid-responsive-3 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 1rem;
-}
-.grid-responsive-4 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-  gap: 1rem;
-}
-
 /* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
@@ -530,24 +470,6 @@ button, a {
 }
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Mobile-first font sizes */
-@media (max-width: 640px) {
-  .admin-title { font-size: 1.25rem; }
-  .section-title { font-size: 1rem; }
-  .card-title { font-size: 0.875rem; }
-}
-
-/* Tablet adjustments */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .admin-nav { font-size: 0.875rem; }
-  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Desktop */
-@media (min-width: 1025px) {
-  .dashboard-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* Scale-in animation for modals */
