@@ -10,7 +10,7 @@ import SupplementPicker from '@/components/SupplementPicker';
 import { ProductCard } from '@/components/menu/ProductCard';
 import { CategoryTabs } from '@/components/menu/CategoryTabs';
 import { PromoBanner } from '@/components/menu/PromoBanner';
-import { RestaurantInfo } from '@/components/menu/RestaurantInfo';
+import { RestaurantSection } from '@/components/menu/RestaurantSection';
 import SaucePicker from '@/components/menu/SaucePicker';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
@@ -331,6 +331,9 @@ function MenuContent() {
         </div>
       </header>
 
+      {/* Restaurant Info Section - EN HAUT */}
+      <RestaurantSection isRTL={isRTL} />
+
       {/* Category Quick Nav */}
       {!loading && categories.length > 0 && (
         <CategoryTabs 
@@ -444,9 +447,6 @@ function MenuContent() {
           </div>
         )}
       </div>
-
-      {/* Restaurant Info Section */}
-      <RestaurantInfo isRTL={isRTL} />
 
       {/* Client Orders Link */}
       <div className="px-4 py-4 border-t border-stone-200 bg-white/30">

@@ -12,9 +12,10 @@ export async function GET() {
     const defaultInfo = {
       phone: '+213 26 XX XX XX',
       address: 'Grande Plage, Tigzirt, Algérie',
-      lat: 36.891389,
-      lng: 4.122778,
-      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=36.891389,4.122778',
+      lat: 36.894516,
+      lng: 4.125496,
+      mapsUrl: 'https://maps.app.goo.gl/yvB4pWXzKzQadb9x7',
+      gallery: [],
     }
 
     if (!setting) {
@@ -38,17 +39,17 @@ export async function PATCH(request: NextRequest) {
     if (authResult instanceof NextResponse) return authResult
 
     const body = await request.json()
-    const { phone, address, lat, lng, mapsUrl } = body
+    const { phone, address, lat, lng, mapsUrl, gallery } = body
 
     await db.systemSettings.upsert({
       where: { key: 'RESTAURANT_INFO' },
       update: {
-        value: JSON.stringify({ phone, address, lat, lng, mapsUrl }),
+        value: JSON.stringify({ phone, address, lat, lng, mapsUrl, gallery: gallery || [] }),
         updatedAt: new Date(),
       },
       create: {
         key: 'RESTAURANT_INFO',
-        value: JSON.stringify({ phone, address, lat, lng, mapsUrl }),
+        value: JSON.stringify({ phone, address, lat, lng, mapsUrl, gallery: gallery || [] }),
       },
     })
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MapPin, Phone, AlertTriangle, Save } from 'lucide-react'
+import { MapPin, Phone, AlertTriangle, Save, Image, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,10 +12,13 @@ export default function AdminSettingsPage() {
   const [restaurantInfo, setRestaurantInfo] = useState({
     phone: '',
     address: '',
-    lat: 36.891389,
-    lng: 4.122778,
+    lat: 36.894516,
+    lng: 4.125496,
     mapsUrl: '',
+    gallery: [] as string[],
   })
+
+  const [newGalleryUrl, setNewGalleryUrl] = useState('')
 
   const [maintenance, setMaintenance] = useState({
     enabled: false,
@@ -86,6 +89,23 @@ export default function AdminSettingsPage() {
         mapsUrl: `https://www.google.com/maps/search/?api=1&query=${restaurantInfo.lat},${restaurantInfo.lng}`,
       })
     }
+  }
+
+  const addGalleryImage = () => {
+    if (newGalleryUrl.trim()) {
+      setRestaurantInfo({
+        ...restaurantInfo,
+        gallery: [...restaurantInfo.gallery, newGalleryUrl.trim()],
+      })
+      setNewGalleryUrl('')
+    }
+  }
+
+  const removeGalleryImage = (index: number) => {
+    setRestaurantInfo({
+      ...restaurantInfo,
+      gallery: restaurantInfo.gallery.filter((_, i) => i !== index),
+    })
   }
 
   return (
@@ -189,6 +209,61 @@ export default function AdminSettingsPage() {
               </div>
             </div>
           )}
+
+          {/* Gallery Section */}
+          <div className="pt-4 border-t border-stone-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Image className="w-5 h-5 text-bm-primary" />
+              <Label className="text-base font-semibold">Galerie Photos Intérieures</Label>
+            </div>
+            <p className="text-sm text-stone-500 mb-3">
+              Photos de l'intérieur du restaurant (affichées dans le menu client)
+            </p>
+
+            {/* Add new image */}
+            <div className="flex gap-2 mb-4">
+              <Input
+                value={newGalleryUrl}
+                onChange={(e) => setNewGalleryUrl(e.target.value)}
+                placeholder="URL de l'image (ex: /images/interior1.jpg)"
+              />
+              <Button
+                onClick={addGalleryImage}
+                disabled={!newGalleryUrl.trim()}
+                variant="outline"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Ajouter
+              </Button>
+            </div>
+
+            {/* Gallery preview */}
+            {restaurantInfo.gallery.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {restaurantInfo.gallery.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Galerie ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border border-stone-200"
+                    />
+                    <button
+                      onClick={() => removeGalleryImage(index)}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-stone-50 rounded-lg border-2 border-dashed border-stone-200">
+                <Image className="w-12 h-12 text-stone-300 mx-auto mb-2" />
+                <p className="text-sm text-stone-500">Aucune photo ajoutée</p>
+              </div>
+            )}
+          </div>
 
           <Button
             onClick={saveRestaurantInfo}

@@ -13,6 +13,7 @@ interface RestaurantData {
   lat: number
   lng: number
   mapsUrl: string
+  gallery?: string[]
 }
 
 export function RestaurantInfo({ isRTL }: RestaurantInfoProps) {

@@ -1,44 +1,29 @@
 // ========================================
 // AWID / BURGER MINUTE - Order Number Generator
-// Format: BM-YYMMDD-XXX (daily increment)
+// Format: 00001, 00002, 00003... (increment global)
 // ========================================
 
 import { db } from '@/lib/db'
 
-function getDateString(): string {
-  const now = new Date()
-  const yy = String(now.getFullYear()).slice(-2)
-  const mm = String(now.getMonth() + 1).padStart(2, '0')
-  const dd = String(now.getDate()).padStart(2, '0')
-  return `${yy}${mm}${dd}`
-}
-
 export async function generateOrderNumber(): Promise<string> {
-  const todayStr = getDateString()
-  const prefix = `BM-${todayStr}`
-
   // Retry loop pour gérer les race conditions
   for (let attempt = 0; attempt < 5; attempt++) {
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-
+    // Récupérer la dernière commande (tous types confondus)
     const lastOrder = await db.order.findFirst({
-      where: {
-        orderNumber: { startsWith: prefix },
-        createdAt: { gte: todayStart },
-      },
       orderBy: { orderNumber: 'desc' },
       select: { orderNumber: true },
     })
 
-    let maxSeq = 0
+    let nextNumber = 1
     if (lastOrder) {
-      const match = lastOrder.orderNumber.match(/^BM-\d{6}-(\d+)$/)
-      if (match) maxSeq = parseInt(match[1], 10)
+      // Extraire le numéro (format: 00001, 00002, etc.)
+      const currentNumber = parseInt(lastOrder.orderNumber, 10)
+      if (!isNaN(currentNumber)) {
+        nextNumber = currentNumber + 1
+      }
     }
 
-    const nextSeq = maxSeq + 1
-    const orderNumber = `${prefix}-${String(nextSeq).padStart(3, '0')}`
+    const orderNumber = String(nextNumber).padStart(5, '0')
 
     // Vérifier unicité avant de retourner
     const exists = await db.order.findUnique({
@@ -51,5 +36,5 @@ export async function generateOrderNumber(): Promise<string> {
   }
 
   // Fallback : timestamp-based suffix
-  return `${prefix}-${Date.now().toString(36).toUpperCase()}`
+  return `${Date.now().toString().slice(-5)}`
 }

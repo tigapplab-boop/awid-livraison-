@@ -58,6 +58,16 @@ const KitchenTicket = forwardRef<HTMLDivElement, KitchenTicketProps>(
                   {/* Nom produit en TRÈS GROS */}
                   <p className="font-black text-2xl uppercase leading-tight mb-2">{item.product.name}</p>
                   
+                  {/* Prix unitaire et total */}
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-lg font-bold">Prix unitaire:</span>
+                    <span className="text-2xl font-black">{(item.price / 100).toFixed(2)} DA</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-stone-100 p-2 mt-2">
+                    <span className="text-xl font-black">TOTAL:</span>
+                    <span className="text-3xl font-black">{((item.price * item.quantity) / 100).toFixed(2)} DA</span>
+                  </div>
+                  
                   {/* Notes en évidence si présentes */}
                   {item.notes && (
                     <div className="bg-yellow-200 border-2 border-yellow-600 p-3 mt-3">
@@ -69,6 +79,24 @@ const KitchenTicket = forwardRef<HTMLDivElement, KitchenTicketProps>(
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Total Final - TRÈS VISIBLE */}
+        <div className="border-4 border-black bg-black text-white p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-2xl font-black">SOUS-TOTAL:</span>
+            <span className="text-3xl font-black">{(order.subtotal / 100).toFixed(2)} DA</span>
+          </div>
+          {order.deliveryFee > 0 && (
+            <div className="flex justify-between items-center mb-4 border-t border-white pt-4">
+              <span className="text-2xl font-black">LIVRAISON:</span>
+              <span className="text-3xl font-black">{(order.deliveryFee / 100).toFixed(2)} DA</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center border-t-4 border-white pt-4">
+            <span className="text-3xl font-black">TOTAL:</span>
+            <span className="text-5xl font-black bg-white text-black px-4 py-2">{(order.total / 100).toFixed(2)} DA</span>
+          </div>
         </div>
 
         {/* Special Notes - Très visible */}
