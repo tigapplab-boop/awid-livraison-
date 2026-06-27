@@ -48,6 +48,14 @@ export default function CheckoutPage() {
   const [pendingModal, setPendingModal] = useState<PendingModalData | null>(null);
   const [pendingAction, setPendingAction] = useState<'modify' | 'create' | null>(null);
   
+  // Client info state
+  const [clientInfo, setClientInfo] = useState<{
+    name: string;
+    phone: string;
+    addresses: Array<{ id: string; address: string; zone: string; isDefault: boolean }>;
+  } | null>(null);
+  const [loadingClientInfo, setLoadingClientInfo] = useState(true);
+  
   // Opening hours state
   const [openingHours, setOpeningHours] = useState<OpeningHours | null>(null);
   const [restaurantStatus, setRestaurantStatus] = useState<{
@@ -57,6 +65,28 @@ export default function CheckoutPage() {
     nextOpening: Date | null;
   } | null>(null);
   const [showClosedModal, setShowClosedModal] = useState(false);
+
+  // Fetch client info on mount
+  useEffect(() => {
+    const fetchClientInfo = async () => {
+      try {
+        const res = await fetch('/api/clients/me');
+        if (res.ok) {
+          const data = await res.json();
+          setClientInfo({
+            name: data.name || '',
+            phone: data.phone || '',
+            addresses: data.addresses || [],
+          });
+        }
+      } catch (error) {
+        // Client hasn't ordered yet, that's fine
+      } finally {
+        setLoadingClientInfo(false);
+      }
+    };
+    fetchClientInfo();
+  }, []);
 
   // Fetch opening hours
   useEffect(() => {
@@ -94,6 +124,8 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -103,6 +135,27 @@ export default function CheckoutPage() {
       notes: '',
     },
   });
+
+  // Pre-fill form when client info loads
+  useEffect(() => {
+    if (clientInfo && !loadingClientInfo) {
+      if (clientInfo.name) {
+        setValue('clientName', clientInfo.name);
+      }
+      if (clientInfo.phone) {
+        // Remove +213 prefix for display
+        const displayPhone = clientInfo.phone.startsWith('+213') 
+          ? '0' + clientInfo.phone.substring(4)
+          : clientInfo.phone;
+        setValue('clientPhone', displayPhone);
+      }
+      // Pre-fill default address if exists
+      const defaultAddress = clientInfo.addresses.find(a => a.isDefault);
+      if (defaultAddress) {
+        setValue('clientAddress', defaultAddress.address);
+      }
+    }
+  }, [clientInfo, loadingClientInfo, setValue]);
 
   const buildOrderItems = useCallback((cartItems: CartItem[]) => {
     return cartItems.map((item) => {
@@ -325,6 +378,24 @@ export default function CheckoutPage() {
               <label htmlFor="clientAddress" className="mb-1.5 block text-sm font-bold text-stone-700">
                 {t('checkout.address', locale)} <span className="text-red-500">*</span>
               </label>
+              
+              {/* Saved Addresses Selector */}
+              {clientInfo && clientInfo.addresses.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {clientInfo.addresses.map((addr) => (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      onClick={() => setValue('clientAddress', addr.address)}
+                      className="px-3 py-2 text-xs font-medium bg-blue-50 text-blue-700 border-2 border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-95"
+                    >
+                      📍 {addr.address.length > 30 ? addr.address.substring(0, 30) + '...' : addr.address}
+                      {addr.isDefault && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+              )}
+              
               <textarea
                 id="clientAddress"
                 placeholder={t('checkout.address', locale)}

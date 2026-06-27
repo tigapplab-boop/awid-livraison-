@@ -811,7 +811,7 @@ function NouvellesTab({
                 )}
               </button>
               <button
-                onClick={() => onReject(order.id)}
+                onClick={() => onReject(order.tempToken)}
                 className="btn-bm-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 text-sm"
               >
                 ❌
@@ -957,7 +957,7 @@ function AccepteesTab({
                   </div>
                 )}
                 <button
-                  onClick={() => onReject(order.id)}
+                  onClick={() => onReject(order.tempToken)}
                   className="btn-bm-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 w-full gap-1.5 text-sm"
                 >
                   ❌ Refuser

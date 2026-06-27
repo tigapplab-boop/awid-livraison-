@@ -11,6 +11,7 @@ import { ProductCard } from '@/components/menu/ProductCard';
 import { CategoryTabs } from '@/components/menu/CategoryTabs';
 import { PromoBanner } from '@/components/menu/PromoBanner';
 import { RestaurantSection } from '@/components/menu/RestaurantSection';
+import { OrderHistoryLink } from '@/components/menu/OrderHistoryLink';
 import SaucePicker from '@/components/menu/SaucePicker';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
@@ -360,6 +361,11 @@ function MenuContent() {
       {/* Promo Banner */}
       {!loading && categories.length > 0 && (
         <PromoBanner locale={locale} />
+      )}
+
+      {/* Order History Link */}
+      {!loading && (
+        <OrderHistoryLink locale={locale} />
       )}
 
       {/* Content - All Categories */}
