@@ -17,6 +17,8 @@ import KitchenTicket from '@/components/pos/KitchenTicket'
 import { usePrint } from '@/hooks/use-print'
 import SupplementPicker from '@/components/SupplementPicker'
 import SaucePicker from '@/components/menu/SaucePicker'
+import BluetoothPrinterButton from '@/components/pos/BluetoothPrinterButton'
+import { BluetoothPrinter } from '@/bm/lib/bluetooth-printer'
 
 interface CartItem {
   product: Product
@@ -82,6 +84,7 @@ export default function POSPage() {
   // Printing
   const ticketRef = useRef<HTMLDivElement>(null)
   const { print } = usePrint(ticketRef)
+  const [bluetoothPrinter, setBluetoothPrinter] = useState<BluetoothPrinter | null>(null)
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
 
@@ -314,6 +317,34 @@ export default function POSPage() {
       }
 
       setMessage({ type: 'success', text: `Commande ${data.orderNumber} créée avec succès!` })
+      
+      // Imprimer si Bluetooth connecté
+      if (bluetoothPrinter && bluetoothPrinter.isConnected()) {
+        try {
+          await bluetoothPrinter.printOrderTicket({
+            orderNumber: data.orderNumber,
+            type: 'phone',
+            items: cart.map((i) => ({
+              name: i.product.name,
+              quantity: i.quantity,
+              price: i.product.price,
+              attachedToProductId: i.attachedToProductId,
+            })),
+            subtotal,
+            deliveryFee,
+            total,
+            clientName: clientName.trim(),
+            clientPhone,
+            clientAddress: clientAddress.trim(),
+            deliveryZone: selectedZoneData?.name,
+            notes: orderNotes.trim() || undefined,
+            createdAt: new Date(),
+          })
+        } catch (printErr) {
+          console.error('Erreur impression:', printErr)
+        }
+      }
+      
       resetForm()
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erreur' })
@@ -358,9 +389,33 @@ export default function POSPage() {
       setLastPOSOrder(data)
       resetForm()
       
-      // Auto-print ticket after a short delay
-      setTimeout(() => {
-        print()
+      // Auto-print with Bluetooth or browser print
+      setTimeout(async () => {
+        // Try Bluetooth printer first if connected
+        if (bluetoothPrinter && bluetoothPrinter.isConnected()) {
+          try {
+            await bluetoothPrinter.printOrderTicket({
+              orderNumber: data.orderNumber,
+              type: 'pos',
+              items: cart.map((i) => ({
+                name: i.product.name,
+                quantity: i.quantity,
+                price: i.product.price,
+                attachedToProductId: i.attachedToProductId,
+              })),
+              subtotal,
+              total,
+              createdAt: new Date(),
+            })
+          } catch (err) {
+            console.error('Erreur impression Bluetooth:', err)
+            // Fallback to browser print
+            print()
+          }
+        } else {
+          // Use browser print if Bluetooth not connected
+          print()
+        }
       }, 500)
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erreur' })
@@ -383,18 +438,41 @@ export default function POSPage() {
 
   return (
     <div className="p-4 lg:p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h1 className="text-2xl font-extrabold text-stone-900">Point de Vente</h1>
-        {lastPOSOrder && (
-          <Button
-            onClick={() => print()}
-            variant="outline"
-            className="gap-2 border-bm-primary text-bm-primary hover:bg-bm-primary-50"
-          >
-            <Printer className="h-4 w-4" />
-            Réimprimer dernier ticket
-          </Button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Bluetooth Printer Button */}
+          <BluetoothPrinterButton
+            onPrinterConnected={(p) => setBluetoothPrinter(p)}
+            onPrinterDisconnected={() => setBluetoothPrinter(null)}
+          />
+          {/* Reprint last ticket */}
+          {lastPOSOrder && (
+            <Button
+              onClick={async () => {
+                if (bluetoothPrinter && bluetoothPrinter.isConnected()) {
+                  try {
+                    await bluetoothPrinter.printOrderTicket({
+                      orderNumber: lastPOSOrder.orderNumber,
+                      type: 'pos',
+                      items: lastPOSOrder.items || [],
+                      subtotal: lastPOSOrder.total || 0,
+                      total: lastPOSOrder.total || 0,
+                      createdAt: new Date(),
+                    })
+                  } catch { print() }
+                } else {
+                  print()
+                }
+              }}
+              variant="outline"
+              className="gap-2 border-bm-primary text-bm-primary hover:bg-bm-primary-50"
+            >
+              <Printer className="h-4 w-4" />
+              Réimprimer
+            </Button>
+          )}
+        </div>
       </div>
 
       {message && (
