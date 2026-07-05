@@ -17,11 +17,14 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    // Use gateway pattern: relative path with XTransformPort query param
-    // Caddy will forward to the correct port
     const token = typeof window !== 'undefined' ? localStorage.getItem('bm_livreur_token') || localStorage.getItem('bm_admin_token') : null;
-    socket = io('/?XTransformPort=' + SOCKET_PORT, {
+    
+    // URL du socket-service (définie via NEXT_PUBLIC_SOCKET_URL en prod, localhost en dev)
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3003';
+    
+    socket = io(socketUrl, {
       auth: { token },
+      path: '/socket.io/',
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,

@@ -10,14 +10,14 @@ const EMIT_PORT = 3004;
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
-  // DO NOT change the path, it is used by Caddy to forward the request to the correct port
-  path: '/',
+  path: '/socket.io/',
   cors: {
     origin: process.env.ALLOWED_ORIGINS?.split(',') || [
-      'https://burgerminute.space-z.ai',
+      'https://burgerminute.giize.com',
       'http://localhost:3000',
     ],
     methods: ['GET', 'POST'],
+    credentials: true,
   },
   pingTimeout: 60000,
   pingInterval: 25000,
