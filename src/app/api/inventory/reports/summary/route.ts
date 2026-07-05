@@ -3,6 +3,7 @@
 // ========================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRole } from '@/bm/lib/auth'
 import { db } from '@/lib/db'
 import { calculateProfit, getStockStatus } from '@/lib/inventory/calculations'
 
@@ -23,6 +24,9 @@ interface SummaryReport {
 // GET /api/inventory/reports/summary - Résumé global
 export async function GET(req: NextRequest) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     // Produits
     const products = await db.inventoryProduct.findMany()
     const totalProducts = products.length

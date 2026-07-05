@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole } from '@/bm/lib/auth'
 
 // PATCH /api/sauces/[id] - Modifier une sauce
 export async function PATCH(
@@ -11,6 +12,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     const { id } = params
     const body = await req.json()
     const { name, nameAr, isAvailable, sortOrder } = body
@@ -42,6 +46,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     const { id } = params
 
     await db.sauce.delete({

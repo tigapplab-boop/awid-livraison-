@@ -174,6 +174,16 @@ export async function updateOrderStatus(
 // Availability Management
 // ========================================
 
+export async function getAvailability(userId: string): Promise<{
+  id: string
+  isAvailable: boolean
+  availabilitySchedule: any
+}> {
+  return apiFetch(`/livreurs/${userId}/availability`, {
+    method: 'GET',
+  })
+}
+
 export async function updateAvailability(
   userId: string,
   isAvailable?: boolean,

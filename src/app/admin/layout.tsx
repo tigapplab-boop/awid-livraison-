@@ -18,27 +18,59 @@ import {
   Clock,
   Droplet,
   Warehouse,
+  Settings,
+  Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-const NAV_ITEMS = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/pos', label: 'POS / Caisse', icon: ShoppingCart },
-  { href: '/admin/products', label: 'Produits', icon: Package },
-  { href: '/admin/promo', label: 'Promos', icon: Megaphone },
-  { href: '/admin/hours', label: 'Horaires', icon: Clock },
-  { href: '/admin/sauces', label: 'Sauces', icon: Droplet },
-  { href: '/admin/inventory', label: 'Inventaire', icon: Warehouse },
-  { href: '/admin/zones', label: 'Zones', icon: MapPin },
-  { href: '/admin/livreurs', label: 'Livreurs', icon: Bike },
-  { href: '/admin/contacts', label: 'Contacts', icon: Phone },
-  { href: '/admin/statistics', label: 'Statistiques', icon: BarChart3 },
-  { href: '/admin/stats', label: 'Stats Simple', icon: BarChart3 },
-  { href: '/admin/finance', label: 'Finance', icon: DollarSign },
+// Regroupé par thème pour un usage quotidien plus simple (au lieu d'une
+// liste plate de 14 entrées) : Opérations du jour → Catalogue → Réglages → Chiffres.
+// "Paramètres" et "Avis clients" étaient absents du menu — ils existent, mais
+// n'étaient joignables qu'en tapant l'URL directement. Ajoutés ici.
+const NAV_GROUPS = [
+  {
+    title: 'Opérations du jour',
+    items: [
+      { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/admin/pos', label: 'POS / Caisse', icon: ShoppingCart },
+      { href: '/admin/livreurs', label: 'Livreurs', icon: Bike },
+    ],
+  },
+  {
+    title: 'Catalogue',
+    items: [
+      { href: '/admin/products', label: 'Produits', icon: Package },
+      { href: '/admin/sauces', label: 'Sauces', icon: Droplet },
+      { href: '/admin/promo', label: 'Promos', icon: Megaphone },
+      { href: '/admin/inventory', label: 'Inventaire', icon: Warehouse },
+    ],
+  },
+  {
+    title: 'Réglages du commerce',
+    items: [
+      { href: '/admin/zones', label: 'Zones', icon: MapPin },
+      { href: '/admin/hours', label: 'Horaires', icon: Clock },
+      { href: '/admin/contacts', label: 'Contacts', icon: Phone },
+      { href: '/admin/settings', label: 'Paramètres', icon: Settings },
+      { href: '/admin/reviews', label: 'Avis clients', icon: Star },
+    ],
+  },
+  {
+    title: 'Chiffres',
+    items: [
+      { href: '/admin/statistics', label: 'Statistiques', icon: BarChart3 },
+      { href: '/admin/stats', label: 'Stats Simple', icon: BarChart3 },
+      { href: '/admin/finance', label: 'Finance', icon: DollarSign },
+    ],
+  },
 ]
+
+// Liste à plat, conservée pour les endroits du code qui cherchent
+// "l'item de nav actif" sans se soucier des groupes (ex: titre de l'en-tête).
+const NAV_ITEMS = NAV_GROUPS.flatMap((group) => group.items)
 
 interface AdminUser {
   id: string
@@ -75,26 +107,35 @@ function SidebarContent({
 
       {/* Nav Links */}
       <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-            const Icon = item.icon
-            return (
-              <button
-                key={item.href}
-                onClick={() => onNavigate(item.href)}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all min-h-[48px] ${
-                  isActive
-                    ? 'bg-bm-primary text-stone-900 shadow-md'
-                    : 'text-stone-600 hover:bg-bm-primary-50 hover:text-bm-primary'
-                }`}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                <span>{item.label}</span>
-                {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
-              </button>
-            )
-          })}
+        <nav className="space-y-4">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.title}>
+              <p className="px-3 pb-1 text-xs font-semibold text-stone-400 uppercase tracking-wide">
+                {group.title}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.href}
+                      onClick={() => onNavigate(item.href)}
+                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all min-h-[48px] ${
+                        isActive
+                          ? 'bg-bm-primary text-stone-900 shadow-md'
+                          : 'text-stone-600 hover:bg-bm-primary-50 hover:text-bm-primary'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <span>{item.label}</span>
+                      {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
       </ScrollArea>
 

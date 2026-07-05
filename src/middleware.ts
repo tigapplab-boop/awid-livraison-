@@ -76,5 +76,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/livreur/:path*'],
+  // Avant : le matcher ne couvrait que /admin/* et /livreur/*, donc le code de
+  // vérification du mode maintenance (destiné aux pages clientes) ne s'exécutait
+  // jamais. Corrigé : le middleware tourne maintenant sur toutes les pages sauf
+  // les routes API, les fichiers Next internes et les favicons.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }

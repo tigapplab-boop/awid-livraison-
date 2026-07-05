@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole } from '@/bm/lib/auth'
 
 // GET /api/sauces - Liste toutes les sauces
 export async function GET(req: NextRequest) {
@@ -29,6 +30,9 @@ export async function GET(req: NextRequest) {
 // POST /api/sauces - Créer une sauce
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     const body = await req.json()
     const { name, nameAr, isAvailable, sortOrder } = body
 

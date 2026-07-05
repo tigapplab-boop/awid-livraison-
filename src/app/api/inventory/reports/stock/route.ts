@@ -3,6 +3,7 @@
 // ========================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRole } from '@/bm/lib/auth'
 import { db } from '@/lib/db'
 import { getStockStatus } from '@/lib/inventory/calculations'
 
@@ -21,6 +22,9 @@ interface StockReport {
 // GET /api/inventory/reports/stock - État du stock avec alertes
 export async function GET(req: NextRequest) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     const { searchParams } = new URL(req.url)
     const statusFilter = searchParams.get('status') // OK | LOW | OUT
 

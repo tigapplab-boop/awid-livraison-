@@ -23,6 +23,7 @@ import {
   formatPrice,
   sendHeartbeat,
   updateAvailability,
+  getAvailability,
   type StoredUser,
 } from '@/bm/lib/livreur-api'
 import {
@@ -145,7 +146,19 @@ export default function LivreurDashboard() {
       return
     }
     setUser(stored)
+    // On affiche d'abord l'instantané local (rapide, évite un écran vide),
+    // puis on le remplace par la vraie valeur venant du serveur dès qu'elle arrive.
     setIsAvailable(stored.isAvailable)
+
+    getAvailability(stored.id)
+      .then((fresh) => {
+        setIsAvailable(fresh.isAvailable)
+        setAvailabilitySchedule(fresh.availabilitySchedule)
+      })
+      .catch((err) => {
+        // Si le serveur ne répond pas, on reste sur l'instantané local plutôt que de bloquer l'écran
+        console.warn('[Livreur] Impossible de recharger le profil (disponibilité/horaires):', err)
+      })
   }, [])
 
   // ========================================

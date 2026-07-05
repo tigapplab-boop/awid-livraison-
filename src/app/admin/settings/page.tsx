@@ -18,8 +18,6 @@ export default function AdminSettingsPage() {
     gallery: [] as string[],
   })
 
-  const [newGalleryUrl, setNewGalleryUrl] = useState('')
-
   const [maintenance, setMaintenance] = useState({
     enabled: false,
     message: '',
@@ -27,7 +25,17 @@ export default function AdminSettingsPage() {
 
   const [saving, setSaving] = useState(false)
   const [savedSection, setSavedSection] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Récupère le jeton de connexion stocké au moment du login,
+  // pour l'envoyer sur chaque requête qui modifie des données (PATCH/POST/DELETE).
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+    return token
+      ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+      : { 'Content-Type': 'application/json' }
+  }
 
   useEffect(() => {
     // Fetch restaurant info
@@ -45,19 +53,24 @@ export default function AdminSettingsPage() {
 
   const saveRestaurantInfo = async () => {
     setSaving(true)
+    setSaveError(null)
     try {
       const res = await fetch('/api/settings/restaurant-info', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(restaurantInfo),
       })
 
       if (res.ok) {
         setSavedSection('restaurant')
         setTimeout(() => setSavedSection(null), 2000)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setSaveError(data.error || `Échec de la sauvegarde (${res.status})`)
       }
     } catch (error) {
       console.error('Error saving restaurant info:', error)
+      setSaveError('Erreur réseau — vérifiez votre connexion')
     } finally {
       setSaving(false)
     }
@@ -65,19 +78,24 @@ export default function AdminSettingsPage() {
 
   const saveMaintenance = async () => {
     setSaving(true)
+    setSaveError(null)
     try {
       const res = await fetch('/api/settings/maintenance', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(maintenance),
       })
 
       if (res.ok) {
         setSavedSection('maintenance')
         setTimeout(() => setSavedSection(null), 2000)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setSaveError(data.error || `Échec de la sauvegarde (${res.status})`)
       }
     } catch (error) {
       console.error('Error saving maintenance:', error)
+      setSaveError('Erreur réseau — vérifiez votre connexion')
     } finally {
       setSaving(false)
     }
@@ -92,13 +110,44 @@ export default function AdminSettingsPage() {
     }
   }
 
-  const addGalleryImage = () => {
-    if (newGalleryUrl.trim()) {
-      setRestaurantInfo({
-        ...restaurantInfo,
-        gallery: [...restaurantInfo.gallery, newGalleryUrl.trim()],
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [galleryError, setGalleryError] = useState<string | null>(null)
+
+  const handleGalleryFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setGalleryError(null)
+    setUploadingGallery(true)
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+      const body = new FormData()
+      body.append('image', file)
+
+      const res = await fetch('/api/settings/restaurant-info/gallery-upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body,
       })
-      setNewGalleryUrl('')
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setGalleryError(data.error || 'Échec du chargement de la photo')
+        return
+      }
+
+      setRestaurantInfo((prev) => ({
+        ...prev,
+        gallery: [...prev.gallery, data.url],
+      }))
+    } catch (error) {
+      console.error('Failed to upload gallery image:', error)
+      setGalleryError('Erreur réseau lors du chargement de la photo')
+    } finally {
+      setUploadingGallery(false)
+      // Permet de réuploader le même fichier une deuxième fois si besoin
+      e.target.value = ''
     }
   }
 
@@ -162,7 +211,7 @@ export default function AdminSettingsPage() {
                       onChange={(e) =>
                         setRestaurantInfo({ ...restaurantInfo, phone: e.target.value })
                       }
-                      placeholder="+213 26 XX XX XX"
+                      placeholder="+213 791643294"
                       className="flex-1"
                     />
                   </div>
@@ -257,24 +306,25 @@ export default function AdminSettingsPage() {
                   Photos de l'intérieur du restaurant affichées dans le menu client avec défilement
                 </p>
 
-                {/* Add new image */}
-                <div className="flex gap-2 mb-4">
-                  <Input
-                    value={newGalleryUrl}
-                    onChange={(e) => setNewGalleryUrl(e.target.value)}
-                    placeholder="URL de l'image (ex: /images/interior1.jpg)"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={addGalleryImage}
-                    disabled={!newGalleryUrl.trim()}
-                    variant="default"
-                    size="sm"
-                    className="bg-bm-primary hover:bg-bm-primary-600 text-stone-900"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Ajouter
-                  </Button>
+                {/* Add new image — chargement direct du fichier */}
+                <div className="mb-4">
+                  <label className="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-bm-primary/40 rounded-lg cursor-pointer hover:bg-bm-primary/5 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingGallery}
+                      onChange={handleGalleryFileSelect}
+                    />
+                    <Plus className="w-4 h-4 text-bm-primary" />
+                    <span className="text-sm font-medium text-stone-700">
+                      {uploadingGallery ? 'Chargement en cours...' : 'Choisir une photo depuis votre appareil'}
+                    </span>
+                  </label>
+                  {galleryError && (
+                    <p className="text-sm text-red-600 mt-2">⚠ {galleryError}</p>
+                  )}
+                  <p className="text-xs text-stone-400 mt-1">JPG, PNG ou WebP — 5 Mo maximum</p>
                 </div>
 
                 {/* Gallery preview */}
@@ -311,6 +361,9 @@ export default function AdminSettingsPage() {
               </div>
 
               <div className="pt-4">
+                {saveError && (
+                  <p className="text-sm text-red-600 mb-2">⚠ {saveError}</p>
+                )}
                 <Button
                   onClick={saveRestaurantInfo}
                   disabled={saving}
@@ -392,6 +445,10 @@ export default function AdminSettingsPage() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {saveError && (
+                <p className="text-sm text-red-600">⚠ {saveError}</p>
               )}
 
               <Button

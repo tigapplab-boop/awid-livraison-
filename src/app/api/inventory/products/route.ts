@@ -4,10 +4,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole } from '@/bm/lib/auth'
 
 // GET /api/inventory/products - Liste tous les produits d'inventaire
 export async function GET(req: NextRequest) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     const { searchParams } = new URL(req.url)
     const category = searchParams.get('category')
     const supplier = searchParams.get('supplier')
@@ -44,6 +48,9 @@ export async function GET(req: NextRequest) {
 // POST /api/inventory/products - Créer un produit d'inventaire
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     const body = await req.json()
     const {
       name,

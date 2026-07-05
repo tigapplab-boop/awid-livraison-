@@ -3,6 +3,7 @@
 // ========================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRole } from '@/bm/lib/auth'
 import { db } from '@/lib/db'
 
 interface DebtReport {
@@ -16,6 +17,9 @@ interface DebtReport {
 // GET /api/inventory/reports/debts - Dettes par fournisseur
 export async function GET(req: NextRequest) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     // Récupérer tous les achats impayés
     const unpaidPurchases = await db.purchase.findMany({
       where: { isPaid: false },

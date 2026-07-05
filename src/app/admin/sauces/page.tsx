@@ -42,6 +42,14 @@ export default function SaucesPage() {
     isAvailable: true,
   })
 
+  // Jeton de connexion à joindre sur chaque requête qui modifie une sauce
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+    return token
+      ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+      : { 'Content-Type': 'application/json' }
+  }
+
   useEffect(() => {
     fetchSauces()
   }, [])
@@ -76,26 +84,29 @@ export default function SaucesPage() {
 
   const handleSave = async () => {
     try {
-      if (editingSauce) {
-        // Update
-        await fetch(`/api/sauces/${editingSauce.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        })
-      } else {
-        // Create
-        await fetch('/api/sauces', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        })
+      const res = editingSauce
+        ? await fetch(`/api/sauces/${editingSauce.id}`, {
+            method: 'PATCH',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(formData),
+          })
+        : await fetch('/api/sauces', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(formData),
+          })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || `Erreur lors de la sauvegarde (${res.status})`)
+        return
       }
+
       setDialogOpen(false)
       fetchSauces()
     } catch (error) {
       console.error('Failed to save sauce:', error)
-      alert('Erreur lors de la sauvegarde')
+      alert('Erreur réseau lors de la sauvegarde')
     }
   }
 
@@ -103,21 +114,33 @@ export default function SaucesPage() {
     if (!confirm('Supprimer cette sauce ?')) return
 
     try {
-      await fetch(`/api/sauces/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/sauces/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || `Erreur lors de la suppression (${res.status})`)
+        return
+      }
       fetchSauces()
     } catch (error) {
       console.error('Failed to delete sauce:', error)
-      alert('Erreur lors de la suppression')
+      alert('Erreur réseau lors de la suppression')
     }
   }
 
   const handleToggleAvailability = async (sauce: Sauce) => {
     try {
-      await fetch(`/api/sauces/${sauce.id}`, {
+      const res = await fetch(`/api/sauces/${sauce.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ isAvailable: !sauce.isAvailable }),
       })
+      if (!res.ok) {
+        console.error('Failed to toggle availability:', res.status)
+        return
+      }
       fetchSauces()
     } catch (error) {
       console.error('Failed to toggle availability:', error)

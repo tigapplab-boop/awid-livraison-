@@ -3,6 +3,7 @@
 // ========================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRole } from '@/bm/lib/auth'
 import { db } from '@/lib/db'
 import { calculateProfit } from '@/lib/inventory/calculations'
 
@@ -23,6 +24,9 @@ interface ProfitReport {
 // GET /api/inventory/reports/profits - Bénéfices par produit
 export async function GET(req: NextRequest) {
   try {
+    const authResult = await requireRole(req, 'ADMIN')
+    if (authResult instanceof NextResponse) return authResult
+
     const products = await db.inventoryProduct.findMany({
       orderBy: { name: 'asc' },
     })

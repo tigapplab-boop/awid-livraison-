@@ -5,9 +5,19 @@ import { revalidatePath } from 'next/cache'
 export async function POST(req: NextRequest) {
   try {
     const secret = req.nextUrl.searchParams.get('secret')
-    
-    // Simple secret check (optional)
-    if (secret && secret !== process.env.REVALIDATE_SECRET && process.env.REVALIDATE_SECRET) {
+    const expectedSecret = process.env.REVALIDATE_SECRET
+
+    // Avant : si "secret" n'était pas fourni dans l'URL, la vérification était sautée
+    // entièrement (n'importe qui pouvait forcer un vidage de cache). Corrigé :
+    // - si REVALIDATE_SECRET n'est pas configuré côté serveur, on refuse par sécurité
+    // - sinon, le secret fourni doit correspondre exactement
+    if (!expectedSecret) {
+      return NextResponse.json(
+        { error: 'REVALIDATE_SECRET non configuré côté serveur' },
+        { status: 500 }
+      )
+    }
+    if (secret !== expectedSecret) {
       return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
     }
 

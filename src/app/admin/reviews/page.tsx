@@ -46,13 +46,25 @@ export default function AdminReviewsPage() {
   const [filter, setFilter] = useState<'all' | 'published' | 'pending'>('all')
   const [loading, setLoading] = useState(true)
 
+  // Jeton de connexion — sans ça, le serveur refuse toutes les requêtes admin (401)
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+    return token
+      ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+      : { 'Content-Type': 'application/json' }
+  }
+
   const fetchReviews = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/reviews/admin?status=${filter}`)
+      const res = await fetch(`/api/reviews/admin?status=${filter}`, {
+        headers: getAuthHeaders(),
+      })
       if (res.ok) {
         const data = await res.json()
         setReviews(data)
+      } else {
+        console.error('Error fetching reviews:', res.status)
       }
     } catch (error) {
       console.error('Error fetching reviews:', error)
@@ -69,12 +81,14 @@ export default function AdminReviewsPage() {
     try {
       const res = await fetch(`/api/reviews/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ isPublished: !currentStatus }),
       })
 
       if (res.ok) {
         fetchReviews()
+      } else {
+        console.error('Error toggling publish:', res.status)
       }
     } catch (error) {
       console.error('Error toggling publish:', error)
@@ -87,10 +101,13 @@ export default function AdminReviewsPage() {
     try {
       const res = await fetch(`/api/reviews/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       })
 
       if (res.ok) {
         fetchReviews()
+      } else {
+        console.error('Error deleting review:', res.status)
       }
     } catch (error) {
       console.error('Error deleting review:', error)
