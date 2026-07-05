@@ -1,36 +1,62 @@
-# ========================================
-# AWID / BURGER MINUTE - Docker Compose for Coolify
-# Coolify handles SSL/reverse proxy automatically
-# ========================================
-
 services:
-  # ---- Next.js Application ----
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: burger-minute-app
-    ports:
-      - "3000:3000"
     environment:
-      - DATABASE_URL=postgresql://burger:burger_secret@db:5432/burger_minute
       - UPLOAD_DIR=/app/upload
-      - JWT_SECRET=burger-minute-jwt-secret-change-me-2024
-      - NODE_ENV=production
+      - EMIT_SERVICE_URL=http://socket-service:3004
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - uploads_data:/app/upload
     restart: unless-stopped
+    networks:
+      - burger-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
 
-  # ---- PostgreSQL Database ----
+  socket-service:
+    build:
+      context: ./mini-services/socket-service
+      dockerfile: Dockerfile
+    container_name: burger-minute-socket
+    environment:
+      - PORT=3003
+      - EMIT_PORT=3004
+      - API_URL=http://app:3000
+    expose:
+      - "3003"
+      - "3004"
+    restart: unless-stopped
+    networks:
+      - burger-network
+    depends_on:
+      - app
+
+  redis:
+    image: redis:7-alpine
+    container_name: burger-minute-redis
+    command: /bin/sh -c 'redis-server --requirepass "$${REDIS_PASSWORD:-burgerm1nute}" --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD:-burgerm1nute}\" ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - burger-network
+
   db:
     image: postgres:16-alpine
     container_name: burger-minute-db
@@ -46,10 +72,14 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - burger-network
 
-# ---- Volumes ----
 volumes:
   postgres_data:
-    driver: local
   uploads_data:
-    driver: local
+  redis_data:
+
+networks:
+  burger-network:
+    driver: bridge
