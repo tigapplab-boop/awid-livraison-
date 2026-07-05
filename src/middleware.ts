@@ -6,18 +6,28 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Check maintenance mode for client-facing routes
+  // NOTE: On utilise l'URL interne absolue pour éviter le fetch failed en Edge Runtime
   if (
     !pathname.startsWith('/admin') &&
-    !pathname.startsWith('/api/admin') &&
+    !pathname.startsWith('/api') &&
     !pathname.startsWith('/livreur') &&
     !pathname.startsWith('/maintenance') &&
     !pathname.startsWith('/_next') &&
-    !pathname.startsWith('/favicon')
+    !pathname.startsWith('/favicon') &&
+    !pathname.startsWith('/login') &&
+    pathname !== '/sw.js' &&
+    pathname !== '/manifest.json'
   ) {
     try {
+      // Utiliser l'URL interne du container pour éviter fetch failed en Edge Runtime
+      const internalUrl = process.env.INTERNAL_API_URL || `http://localhost:3000`
       const maintenanceRes = await fetch(
-        new URL('/api/settings/maintenance', request.url).toString(),
-        { cache: 'no-store' }
+        `${internalUrl}/api/settings/maintenance`,
+        { 
+          cache: 'no-store',
+          headers: { 'x-middleware-internal': '1' },
+          signal: AbortSignal.timeout(2000), // timeout 2s max
+        }
       )
       
       if (maintenanceRes.ok) {
@@ -26,8 +36,8 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL('/maintenance', request.url))
         }
       }
-    } catch (error) {
-      console.error('[Middleware] Maintenance check error:', error)
+    } catch {
+      // Si le fetch échoue (Edge Runtime, réseau), on laisse passer sans bloquer
     }
   }
 
@@ -40,7 +50,7 @@ export async function middleware(request: NextRequest) {
     const token = request.cookies.get('auth_token')?.value
 
     if (!token) {
-      return NextResponse.redirect(new URL(pathname.startsWith('/admin') ? '/admin/login' : '/livreur/login', request.url))
+      return NextResponse.redirect(new URL('/login', request.url))
     }
 
     try {
@@ -52,23 +62,24 @@ export async function middleware(request: NextRequest) {
       
       const { payload } = await jwtVerify(token, JWT_SECRET)
       
-      // Admin verification
       if (pathname.startsWith('/admin')) {
         if (payload.role !== 'ADMIN') {
-          return NextResponse.redirect(new URL('/', request.url))
+          return NextResponse.redirect(new URL('/login', request.url))
         }
       }
 
-      // Livreur verification (admin can also access livreur pages for testing)
       if (pathname.startsWith('/livreur')) {
         if (payload.role !== 'LIVREUR' && payload.role !== 'ADMIN') {
-          return NextResponse.redirect(new URL('/', request.url))
+          return NextResponse.redirect(new URL('/login', request.url))
         }
       }
 
       return NextResponse.next()
-    } catch (err) {
-      return NextResponse.redirect(new URL(pathname.startsWith('/admin') ? '/admin/login' : '/livreur/login', request.url))
+    } catch {
+      // Token invalide → vider le cookie et rediriger vers login
+      const response = NextResponse.redirect(new URL('/login', request.url))
+      response.cookies.set('auth_token', '', { maxAge: 0, path: '/' })
+      return response
     }
   }
 
@@ -76,9 +87,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Avant : le matcher ne couvrait que /admin/* et /livreur/*, donc le code de
-  // vérification du mode maintenance (destiné aux pages clientes) ne s'exécutait
-  // jamais. Corrigé : le middleware tourne maintenant sur toutes les pages sauf
-  // les routes API, les fichiers Next internes et les favicons.
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }

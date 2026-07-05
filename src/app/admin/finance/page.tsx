@@ -203,7 +203,7 @@ export default function FinancePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="max-h-[calc(100vh-400px)]">
+          <ScrollArea className="h-[60vh] lg:max-h-[calc(100vh-400px)]">
             {/* Mobile Cards */}
             <div className="lg:hidden space-y-2 p-4">
               {orders.map((order) => (

@@ -206,11 +206,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setSidebarOpen(false)
   }, [router])
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {}
     localStorage.removeItem('bm_token')
     localStorage.removeItem('bm_user')
-    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    window.location.href = '/menu'
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax'
+    window.location.href = '/login'
   }, [])
 
   // Login page doesn't need the layout
@@ -248,10 +251,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen min-w-0 bg-stone-50">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 bg-stone-50 overflow-x-hidden">
         {/* Top Bar (mobile) */}
         <header className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-stone-200/50 shadow-sm">
-          <div className="flex items-center justify-between px-4 h-16">
+          <div className="flex items-center justify-between px-4 h-14">
             <button
               onClick={() => setSidebarOpen(true)}
               className="p-2 rounded-xl hover:bg-stone-100 transition-colors"
@@ -293,7 +296,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto overscroll-none">
           {children}
         </main>
       </div>

@@ -563,17 +563,19 @@ function MenuContent() {
         </div>
       )}
 
-      {/* Footer link */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-stone-100 bg-[#F8F5F0]/90 backdrop-blur-md safe-area-bottom z-40">
-        <div className="mx-auto max-w-lg px-4 py-2 text-center">
-          <Link
-            href="/login"
-            className="text-[10px] font-medium text-stone-400 hover:text-stone-600 transition-colors uppercase tracking-wider"
-          >
-            Espace Livreur / Admin
-          </Link>
+      {/* Footer link - caché quand le panier est actif */}
+      {!showCartBar && (
+        <div className="fixed bottom-0 left-0 right-0 border-t border-stone-100 bg-[#F8F5F0]/90 backdrop-blur-md safe-area-bottom z-40">
+          <div className="mx-auto max-w-lg px-4 py-2 text-center">
+            <Link
+              href="/login"
+              className="text-[10px] font-medium text-stone-400 hover:text-stone-600 transition-colors uppercase tracking-wider"
+            >
+              Espace Livreur / Admin
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Supplement Picker */}
       <SupplementPicker
