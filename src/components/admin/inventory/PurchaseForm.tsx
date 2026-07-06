@@ -114,10 +114,14 @@ export default function PurchaseForm({ open, onOpenChange, purchase, onSaved }: 
         ? `/api/inventory/purchases/${purchase.id}`
         : '/api/inventory/purchases'
       const method = purchase ? 'PATCH' : 'POST'
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
       })
 

@@ -96,10 +96,14 @@ export default function ProductForm({ open, onOpenChange, product, onSaved }: Pr
         ? `/api/inventory/products/${product.id}`
         : '/api/inventory/products'
       const method = product ? 'PATCH' : 'POST'
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
       })
 
