@@ -71,6 +71,9 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/standalone/.next/static ./.next/static
 COPY --from=builder /app/.next/standalone/public ./public
 
+# Copy custom server with WebSocket proxy for Socket.IO
+COPY --from=builder /app/server.js ./server.js
+
 # Copy Prisma schema, migrations, and seed for runtime
 COPY --from=builder /app/prisma ./prisma
 
@@ -79,6 +82,9 @@ COPY --from=builder /app/package.json ./
 
 # Copy full node_modules to ensure all CLI tools (prisma, tsx) work perfectly
 COPY --from=builder /app/node_modules ./node_modules
+
+# Install http-proxy for WebSocket proxying (lightweight, no build needed)
+RUN npm install http-proxy --save --prefer-offline 2>/dev/null || true
 
 # Set upload directory for uploaded files
 ENV UPLOAD_DIR="/app/upload"
