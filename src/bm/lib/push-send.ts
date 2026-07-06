@@ -80,7 +80,8 @@ export async function sendPushToUser(
         (
           (error as webpush.WebPushError).statusCode === 410 || // Gone
           (error as webpush.WebPushError).statusCode === 404 || // Not Found
-          (error as webpush.WebPushError).statusCode === 400    // Bad Request (malformed)
+          (error as webpush.WebPushError).statusCode === 400 || // Bad Request (malformed)
+          (error as webpush.WebPushError).statusCode === 403    // Forbidden (wrong origin/domain)
         )
 
       if (shouldRemove) {
@@ -163,7 +164,8 @@ export async function sendPushToAll(
         (
           (error as webpush.WebPushError).statusCode === 410 || // Gone
           (error as webpush.WebPushError).statusCode === 404 || // Not Found
-          (error as webpush.WebPushError).statusCode === 400    // Bad Request (malformed)
+          (error as webpush.WebPushError).statusCode === 400 || // Bad Request (malformed)
+          (error as webpush.WebPushError).statusCode === 403    // Forbidden (wrong origin/domain)
         )
 
       if (shouldRemove) {

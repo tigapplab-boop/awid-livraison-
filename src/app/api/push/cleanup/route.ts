@@ -46,7 +46,8 @@ export async function POST() {
           (
             (error as webpush.WebPushError).statusCode === 410 || // Gone
             (error as webpush.WebPushError).statusCode === 404 || // Not Found
-            (error as webpush.WebPushError).statusCode === 400    // Bad Request
+            (error as webpush.WebPushError).statusCode === 400 || // Bad Request
+            (error as webpush.WebPushError).statusCode === 403    // Forbidden (wrong origin/domain)
           )
 
         if (shouldRemove) {
