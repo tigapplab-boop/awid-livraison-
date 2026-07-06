@@ -77,11 +77,15 @@ export default function PurchaseForm({ open, onOpenChange, purchase, onSaved }: 
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/inventory/products')
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+      const res = await fetch('/api/inventory/products', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       const data = await res.json()
-      setProducts(data)
+      setProducts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Failed to fetch products:', error)
+      setProducts([])
     }
   }
 
