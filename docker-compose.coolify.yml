@@ -36,6 +36,11 @@ services:
     expose:
       - "3003"
       - "3004"
+    labels:
+      # Traefik WebSocket support — nécessaire pour Coolify
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.socket-upgrade.headers.customrequestheaders.Connection=Upgrade"
+      - "traefik.http.middlewares.socket-upgrade.headers.customrequestheaders.Upgrade=websocket"
     restart: unless-stopped
     networks:
       - burger-network

@@ -19,23 +19,34 @@ export function getSocket(): Socket {
   if (!socket) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('bm_livreur_token') || localStorage.getItem('bm_admin_token') : null;
     
-    // URL du socket-service (définie via NEXT_PUBLIC_SOCKET_URL en prod, localhost en dev)
+    // URL du socket-service
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3003';
     
     socket = io(socketUrl, {
       auth: { token },
       path: '/socket.io/',
-      transports: ['websocket', 'polling'],
+      // Commencer par polling pour établir la connexion, puis upgrade vers WebSocket
+      // Certains proxies (Coolify/Traefik) ne supportent pas l'upgrade WS direct
+      transports: ['polling', 'websocket'],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 20,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      timeout: 10000,
     });
+
+    socket.on('connect', () => {
+      console.log('[Socket] Connected:', socket?.id)
+    })
 
     socket.on('connect_error', (error) => {
       console.error('[Socket] Connection error:', error.message);
     });
+
+    socket.on('disconnect', (reason) => {
+      console.warn('[Socket] Disconnected:', reason)
+    })
   }
   return socket;
 }

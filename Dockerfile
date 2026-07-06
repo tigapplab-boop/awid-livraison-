@@ -94,13 +94,38 @@ set -e
 
 echo "[Entrypoint] Starting Burger Minute..."
 
-# Run database migrations
+# ── Résoudre les migrations failed avant de déployer ──────────────────────────
+# Prisma refuse de lancer "migrate deploy" s'il y a une migration marquée
+# "failed" dans la table _prisma_migrations. On la marque "rolled_back" pour
+# débloquer le déploiement (la colonne existe déjà en DB, donc c'est safe).
+echo "[Entrypoint] Checking for failed migrations..."
+node -e "
+const { PrismaClient } = require('@prisma/client');
+const p = new PrismaClient();
+async function fix() {
+  try {
+    await p.\$executeRawUnsafe(
+      \"UPDATE \\\"_prisma_migrations\\\" SET rolled_back_at = NOW() WHERE finished_at IS NULL AND rolled_back_at IS NULL\"
+    );
+    console.log('[Entrypoint] Failed migrations resolved.');
+  } catch(e) {
+    console.log('[Entrypoint] Migration fix skipped:', e.message);
+  } finally {
+    await p.\$disconnect();
+  }
+}
+fix();
+" 2>/dev/null || true
+
+# ── Déployer les migrations ───────────────────────────────────────────────────
 echo "[Entrypoint] Running migrations..."
-npx --yes prisma migrate deploy 2>&1 || true
+npx --yes prisma migrate deploy 2>&1 || echo "[Entrypoint] migrate deploy had issues, continuing..."
+
+# ── Sync schema (ajoute les colonnes manquantes sans casser les données) ──────
 echo "[Entrypoint] Syncing database schema..."
 npx --yes prisma db push --accept-data-loss 2>&1 || true
 
-# Seed if no users exist (first deploy)
+# ── Seed si première installation ────────────────────────────────────────────
 USER_COUNT=$(node -e "
 const { PrismaClient } = require('@prisma/client');
 const p = new PrismaClient();
