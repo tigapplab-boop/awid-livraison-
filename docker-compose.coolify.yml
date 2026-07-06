@@ -1,4 +1,25 @@
 services:
+  # ── Nginx reverse proxy — seul service exposé vers Coolify ──────────────────
+  # Route /socket.io/ → socket-service:3003 (WebSocket natif)
+  # Route tout le reste → app:3000
+  nginx:
+    image: nginx:alpine
+    container_name: burger-minute-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+      - socket-service
+    restart: unless-stopped
+    networks:
+      - burger-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Next.js app ──────────────────────────────────────────────────────────────
   app:
     build:
       context: .
@@ -25,6 +46,7 @@ services:
       retries: 3
       start_period: 60s
 
+  # ── Socket.IO service ────────────────────────────────────────────────────────
   socket-service:
     build:
       context: ./mini-services/socket-service
@@ -37,17 +59,13 @@ services:
     expose:
       - "3003"
       - "3004"
-    labels:
-      # Traefik WebSocket support — nécessaire pour Coolify
-      - "traefik.enable=true"
-      - "traefik.http.middlewares.socket-upgrade.headers.customrequestheaders.Connection=Upgrade"
-      - "traefik.http.middlewares.socket-upgrade.headers.customrequestheaders.Upgrade=websocket"
     restart: unless-stopped
     networks:
       - burger-network
     depends_on:
       - app
 
+  # ── Redis ────────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: burger-minute-redis
@@ -63,6 +81,7 @@ services:
     networks:
       - burger-network
 
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     container_name: burger-minute-db

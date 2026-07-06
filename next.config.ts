@@ -27,13 +27,6 @@ const nextConfig: NextConfig = {
         source: "/uploads/:path*",
         destination: "/api/files/:path*",
       },
-      // Proxy Socket.IO vers le socket-service interne
-      // → tout passe par burgerminute.giize.com (SSL déjà configuré)
-      // → plus besoin d'un second domaine avec SSL séparé
-      {
-        source: "/socket.io/:path*",
-        destination: `${process.env.SOCKET_SERVICE_URL || 'http://socket-service:3003'}/socket.io/:path*`,
-      },
     ];
   },
 };
