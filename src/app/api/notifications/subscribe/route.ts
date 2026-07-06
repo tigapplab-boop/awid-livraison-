@@ -1,89 +1,114 @@
 // ========================================
 // AWID / BURGER MINUTE - Push Subscription API
-// POST: Register or update a push subscription
-// DELETE: Remove a push subscription
+// Manages push notification subscriptions
 // ========================================
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { rateLimit } from '@/bm/lib/rate-limit'
+import { verifyAuth } from '@/bm/lib/auth'
 
-interface SubscribeBody {
-  endpoint: string
-  keys: {
-    p256dh: string
-    auth: string
-  }
-  userId?: string
-}
+export const dynamic = 'force-dynamic'
 
-interface UnsubscribeBody {
-  endpoint: string
-}
-
-export async function POST(request: NextRequest): Promise<NextResponse> {
+/**
+ * POST /api/notifications/subscribe
+ * Subscribe a user to push notifications
+ */
+export async function POST(request: NextRequest) {
   try {
-    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown'
-    const rateResult = rateLimit(clientIp, { maxRequests: 10, windowMs: 60_000, key: 'push-subscribe' })
-    if (!rateResult.allowed) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(Math.ceil((rateResult.resetAt - Date.now()) / 1000)) } })
-    }
+    const body = await request.json()
+    const { endpoint, keys, userId } = body
 
-    const body: SubscribeBody = await request.json()
-
-    if (!body.endpoint || !body.keys?.p256dh || !body.keys?.auth) {
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
       return NextResponse.json(
-        { error: 'Missing required fields: endpoint, keys.p256dh, keys.auth' },
+        { error: 'Invalid subscription data' },
         { status: 400 }
       )
     }
 
-    // Upsert: if a subscription with the same endpoint exists, update it
-    const subscription = await db.pushSubscription.upsert({
-      where: { endpoint: body.endpoint },
-      update: {
-        p256dh: body.keys.p256dh,
-        auth: body.keys.auth,
-        userId: body.userId ?? null,
-      },
-      create: {
-        endpoint: body.endpoint,
-        p256dh: body.keys.p256dh,
-        auth: body.keys.auth,
-        userId: body.userId ?? null,
+    // If userId is provided, use it; otherwise try to get from auth
+    let targetUserId = userId
+    if (!targetUserId) {
+      const authResult = await verifyAuth(request)
+      if (!authResult.valid || !authResult.userId) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        )
+      }
+      targetUserId = authResult.userId
+    }
+
+    // Check if subscription already exists
+    const existing = await db.pushSubscription.findFirst({
+      where: { endpoint },
+    })
+
+    if (existing) {
+      // Update userId if different
+      if (existing.userId !== targetUserId) {
+        await db.pushSubscription.update({
+          where: { id: existing.id },
+          data: { userId: targetUserId },
+        })
+      }
+      return NextResponse.json({ success: true, subscriptionId: existing.id })
+    }
+
+    // Create new subscription
+    const subscription = await db.pushSubscription.create({
+      data: {
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        userId: targetUserId,
       },
     })
 
-    return NextResponse.json({ success: true, id: subscription.id })
+    console.log(`[Push] New subscription created for user ${targetUserId}: ${subscription.id}`)
+
+    return NextResponse.json({ success: true, subscriptionId: subscription.id })
   } catch (error) {
-    console.error('[Push Subscribe] Error saving subscription:', error)
+    console.error('[Push Subscribe] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to save push subscription' },
+      { error: 'Failed to save subscription' },
       { status: 500 }
     )
   }
 }
 
-export async function DELETE(request: NextRequest): Promise<NextResponse> {
+/**
+ * DELETE /api/notifications/subscribe
+ * Unsubscribe from push notifications
+ */
+export async function DELETE(request: NextRequest) {
   try {
-    const body: UnsubscribeBody = await request.json()
+    const body = await request.json()
+    const { endpoint } = body
 
-    if (!body.endpoint) {
+    if (!endpoint) {
       return NextResponse.json(
-        { error: 'Missing required field: endpoint' },
+        { error: 'Endpoint is required' },
         { status: 400 }
       )
     }
 
-    await db.pushSubscription.deleteMany({
-      where: { endpoint: body.endpoint },
+    // Find and delete the subscription
+    const subscription = await db.pushSubscription.findFirst({
+      where: { endpoint },
     })
+
+    if (subscription) {
+      await db.pushSubscription.delete({
+        where: { id: subscription.id },
+      })
+      console.log(`[Push] Subscription removed: ${subscription.id}`)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[Push Subscribe] Error removing subscription:', error)
+    console.error('[Push Unsubscribe] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to remove push subscription' },
+      { error: 'Failed to remove subscription' },
       { status: 500 }
     )
   }
