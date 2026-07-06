@@ -17,8 +17,13 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
+    // Correction : le jeton de connexion est toujours stocké sous la clé
+    // "bm_token" (voir login/page.tsx) — les anciennes clés "bm_livreur_token"
+    // et "bm_admin_token" ne sont écrites nulle part dans le code, donc ce
+    // token était toujours vide et la connexion Socket.IO ne s'authentifiait
+    // jamais correctement.
     const token = typeof window !== 'undefined'
-      ? localStorage.getItem('bm_livreur_token') || localStorage.getItem('bm_admin_token')
+      ? localStorage.getItem('bm_token')
       : null
 
     // On se connecte via le MÊME domaine que l'app (burgerminute.giize.com)

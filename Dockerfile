@@ -28,6 +28,10 @@ RUN npm install -g bun
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build arg for VAPID public key (must be set at build time for NEXT_PUBLIC_ vars)
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
