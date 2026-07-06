@@ -75,6 +75,21 @@ export default function ProductsTab() {
       })
       if (!res.ok) {
         const error = await res.json()
+        // Si le produit a des achats, proposer de forcer la suppression
+        if (error.error?.includes('purchases')) {
+          const force = confirm('Ce produit a des achats associés. Voulez-vous quand même le supprimer (les achats seront aussi supprimés) ?')
+          if (force) {
+            const res2 = await fetch(`/api/inventory/products/${id}?force=true`, {
+              method: 'DELETE',
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            })
+            if (res2.ok) {
+              fetchProducts()
+              return
+            }
+          }
+          return
+        }
         alert(error.error || 'Erreur lors de la suppression')
         return
       }

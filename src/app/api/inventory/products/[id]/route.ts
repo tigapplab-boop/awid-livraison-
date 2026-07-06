@@ -87,17 +87,23 @@ export async function DELETE(
 ) {
   try {
     const { id } = params
+    const force = req.nextUrl.searchParams.get('force') === 'true'
 
-    // Vérifier qu'il n'y a pas d'achats liés
-    const purchasesCount = await db.purchase.count({
-      where: { productId: id },
-    })
+    // Vérifier qu'il n'y a pas d'achats liés (sauf si force=true)
+    if (!force) {
+      const purchasesCount = await db.purchase.count({
+        where: { productId: id },
+      })
 
-    if (purchasesCount > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete product with existing purchases' },
-        { status: 400 }
-      )
+      if (purchasesCount > 0) {
+        return NextResponse.json(
+          { error: 'Cannot delete product with existing purchases' },
+          { status: 400 }
+        )
+      }
+    } else {
+      // Force : supprimer d'abord tous les achats liés
+      await db.purchase.deleteMany({ where: { productId: id } })
     }
 
     await db.inventoryProduct.delete({
