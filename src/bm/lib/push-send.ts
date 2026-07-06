@@ -73,26 +73,29 @@ export async function sendPushToUser(
     } catch (error: unknown) {
       failed++
 
-      // If the subscription is invalid (410 Gone or 404 Not Found), remove it from DB
-      if (
+      // Check if subscription is invalid and should be removed
+      const shouldRemove =
         error instanceof Error &&
         'statusCode' in error &&
-        (error as webpush.WebPushError).statusCode === 410
-      ) {
-        await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {
-          // Silently ignore deletion errors
-        })
-      } else if (
-        error instanceof Error &&
-        'statusCode' in error &&
-        (error as webpush.WebPushError).statusCode === 404
-      ) {
+        (
+          (error as webpush.WebPushError).statusCode === 410 || // Gone
+          (error as webpush.WebPushError).statusCode === 404 || // Not Found
+          (error as webpush.WebPushError).statusCode === 400    // Bad Request (malformed)
+        )
+
+      if (shouldRemove) {
+        const statusCode = (error as webpush.WebPushError).statusCode
+        console.log(`[Push] Removing invalid subscription ${sub.id} (status ${statusCode})`)
         await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {
           // Silently ignore deletion errors
         })
       } else {
+        // Log the error with status code if available
+        const statusCode = error instanceof Error && 'statusCode' in error
+          ? (error as webpush.WebPushError).statusCode
+          : 'unknown'
         console.error(
-          `[Push] Failed to send notification to subscription ${sub.id}:`,
+          `[Push] Failed to send notification to subscription ${sub.id} (status ${statusCode}):`,
           error instanceof Error ? error.message : error
         )
       }
@@ -153,19 +156,29 @@ export async function sendPushToAll(
     } catch (error: unknown) {
       failed++
 
-      // Remove invalid subscriptions
-      if (
+      // Check if subscription is invalid and should be removed
+      const shouldRemove =
         error instanceof Error &&
         'statusCode' in error &&
-        ((error as webpush.WebPushError).statusCode === 410 ||
-          (error as webpush.WebPushError).statusCode === 404)
-      ) {
+        (
+          (error as webpush.WebPushError).statusCode === 410 || // Gone
+          (error as webpush.WebPushError).statusCode === 404 || // Not Found
+          (error as webpush.WebPushError).statusCode === 400    // Bad Request (malformed)
+        )
+
+      if (shouldRemove) {
+        const statusCode = (error as webpush.WebPushError).statusCode
+        console.log(`[Push] Removing invalid subscription ${sub.id} (status ${statusCode})`)
         await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {
           // Silently ignore deletion errors
         })
       } else {
+        // Log the error with status code if available
+        const statusCode = error instanceof Error && 'statusCode' in error
+          ? (error as webpush.WebPushError).statusCode
+          : 'unknown'
         console.error(
-          `[Push] Failed to send notification to subscription ${sub.id}:`,
+          `[Push] Failed to send notification to subscription ${sub.id} (status ${statusCode}):`,
           error instanceof Error ? error.message : error
         )
       }
