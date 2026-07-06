@@ -219,6 +219,27 @@ export default function UnifiedLoginPage() {
               )}
             </button>
           </form>
+
+          {/* Link to menu */}
+          <div className="mt-6 text-center">
+            <a
+              href="/menu"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-bm-primary hover:text-bm-primary-700 transition-colors"
+            >
+              <span>←</span>
+              Retour au menu client
+            </a>
+          </div>
+        </div>
+
+        {/* Link to client menu */}
+        <div className="text-center mt-6">
+          <a
+            href="/menu"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-stone-600 hover:text-bm-primary transition-colors"
+          >
+            ← Retour au menu
+          </a>
         </div>
         
         <p className="text-center text-xs font-medium text-stone-400 mt-8">

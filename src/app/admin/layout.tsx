@@ -199,6 +199,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [isLoginPage, isAuthed])
 
+  // Prevent back navigation after logout
+  useEffect(() => {
+    const preventBack = () => {
+      window.history.pushState(null, '', window.location.href)
+    }
+    
+    // Push initial state
+    preventBack()
+    
+    // Listen for back button
+    window.addEventListener('popstate', preventBack)
+    
+    return () => {
+      window.removeEventListener('popstate', preventBack)
+    }
+  }, [])
+
   const handleNavigate = useCallback((href: string) => {
     router.push(href)
     setSidebarOpen(false)
@@ -211,7 +228,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     localStorage.removeItem('bm_token')
     localStorage.removeItem('bm_user')
     document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax'
-    window.location.href = '/login'
+    
+    // Prevent browser back button from showing cached page
+    window.history.pushState(null, '', window.location.href)
+    window.addEventListener('popstate', () => {
+      window.history.pushState(null, '', window.location.href)
+    })
+    
+    window.location.replace('/login')
   }, [])
 
   // Login page doesn't need the layout
