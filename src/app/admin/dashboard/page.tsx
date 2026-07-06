@@ -471,6 +471,7 @@ export default function DashboardPage() {
   const [pushEnabled, setPushEnabled] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [activeTab, setActiveTab] = useState<string>('new') // Mobile tabs
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -656,46 +657,76 @@ export default function DashboardPage() {
     <>
       <div className="p-4 lg:p-6 h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 lg:mb-6">
           <div>
-            <h1 className="text-2xl font-extrabold text-stone-900">Commandes</h1>
-            <p className="text-sm text-stone-500 mt-1">
+            <h1 className="text-xl lg:text-2xl font-extrabold text-stone-900">Commandes</h1>
+            <p className="text-xs lg:text-sm text-stone-500 mt-1">
               {orders.length} commande{orders.length !== 1 ? 's' : ''} aujourd&apos;hui
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setShowSettings(true)}
-              variant="outline"
-              className="min-h-[48px] border-bm-primary text-bm-primary hover:bg-bm-primary-50"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Paramètres
-            </Button>
-            <Button
-              onClick={handleTogglePush}
-              variant="outline"
-              className={`min-h-[48px] ${pushEnabled ? 'border-bm-primary text-bm-primary' : 'border-stone-300 text-stone-400'}`}
-              title={pushEnabled ? 'Notifications activees' : 'Notifications desactivees'}
-            >
-              {pushEnabled ? <Bell className="h-4 w-4 mr-2" /> : <BellOff className="h-4 w-4 mr-2" />}
-              {pushEnabled ? 'Notifs ON' : 'Notifs OFF'}
-            </Button>
-            <Button
-              onClick={fetchOrders}
-              variant="outline"
-              className="min-h-[48px] border-bm-primary text-bm-primary hover:bg-bm-primary-50"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Rafraîchir
-            </Button>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="min-h-[48px] border-red-300 text-red-500 hover:bg-red-50"
-            >
-              Déconnexion
-            </Button>
+            {/* Desktop buttons */}
+            <div className="hidden lg:flex items-center gap-2">
+              <Button
+                onClick={() => setShowSettings(true)}
+                variant="outline"
+                className="min-h-[48px] border-bm-primary text-bm-primary hover:bg-bm-primary-50"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Paramètres
+              </Button>
+              <Button
+                onClick={handleTogglePush}
+                variant="outline"
+                className={`min-h-[48px] ${pushEnabled ? 'border-bm-primary text-bm-primary' : 'border-stone-300 text-stone-400'}`}
+                title={pushEnabled ? 'Notifications activees' : 'Notifications desactivees'}
+              >
+                {pushEnabled ? <Bell className="h-4 w-4 mr-2" /> : <BellOff className="h-4 w-4 mr-2" />}
+                {pushEnabled ? 'Notifs ON' : 'Notifs OFF'}
+              </Button>
+              <Button
+                onClick={fetchOrders}
+                variant="outline"
+                className="min-h-[48px] border-bm-primary text-bm-primary hover:bg-bm-primary-50"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Rafraîchir
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="min-h-[48px] border-red-300 text-red-500 hover:bg-red-50"
+              >
+                Déconnexion
+              </Button>
+            </div>
+
+            {/* Mobile buttons - compact */}
+            <div className="flex lg:hidden items-center gap-1.5">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-2.5 rounded-lg border border-bm-primary text-bm-primary hover:bg-bm-primary-50 transition-colors min-h-[44px] min-w-[44px]"
+                aria-label="Paramètres"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+              <button
+                onClick={handleTogglePush}
+                className={`p-2.5 rounded-lg border transition-colors min-h-[44px] min-w-[44px] ${
+                  pushEnabled ? 'border-bm-primary text-bm-primary' : 'border-stone-300 text-stone-400'
+                }`}
+                aria-label={pushEnabled ? 'Notifications activées' : 'Notifications désactivées'}
+              >
+                {pushEnabled ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
+              </button>
+              <button
+                onClick={fetchOrders}
+                className="p-2.5 rounded-lg border border-bm-primary text-bm-primary hover:bg-bm-primary-50 transition-colors min-h-[44px] min-w-[44px]"
+                aria-label="Rafraîchir"
+              >
+                <RefreshCw className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -705,13 +736,66 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Livreurs Online Panel */}
-        <div className="mb-6">
+        {/* Livreurs Online Panel - Desktop only */}
+        <div className="hidden lg:block mb-6">
           <LiveursOnlinePanel />
         </div>
 
-        {/* Kanban Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
+        {/* Mobile Tabs */}
+        <div className="lg:hidden mb-4 flex overflow-x-auto gap-2 pb-2 -mx-4 px-4 scrollbar-hide">
+          {COLUMNS.map((col) => {
+            const Icon = col.icon
+            const colOrders = getOrdersForColumn(col.statuses)
+            const isActive = activeTab === col.key
+            return (
+              <button
+                key={col.key}
+                onClick={() => setActiveTab(col.key)}
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all min-h-[48px] border-2 ${
+                  isActive
+                    ? col.bgColor + ' ' + col.color
+                    : 'bg-white border-stone-200 text-stone-500'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{col.label}</span>
+                {colOrders.length > 0 && (
+                  <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold ${
+                    isActive
+                      ? 'bg-white/80 text-stone-900'
+                      : 'bg-stone-100 text-stone-600'
+                  }`}>
+                    {colOrders.length}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Mobile Content - Single column with tabs */}
+        <div className="lg:hidden flex-1 overflow-y-auto space-y-3">
+          {(() => {
+            const activeColumn = COLUMNS.find(c => c.key === activeTab)!
+            const colOrders = getOrdersForColumn(activeColumn.statuses)
+            return colOrders.length === 0 ? (
+              <div className="text-center py-12 text-stone-400 text-sm">
+                Aucune commande
+              </div>
+            ) : (
+              colOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onStatusChange={handleStatusChange}
+                />
+              ))
+            )
+          })()}
+        </div>
+
+        {/* Desktop Kanban Columns */}
+        <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
           {COLUMNS.map((col) => {
             const Icon = col.icon
             const colOrders = getOrdersForColumn(col.statuses)
