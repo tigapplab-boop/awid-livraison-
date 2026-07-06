@@ -9,42 +9,24 @@ import { calculatePurchaseTotal } from '@/lib/inventory/calculations'
 // GET /api/inventory/purchases/[id] - Détail d'un achat
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
-
-    const purchase = await db.purchase.findUnique({
-      where: { id },
-      include: {
-        product: true,
-      },
-    })
-
-    if (!purchase) {
-      return NextResponse.json(
-        { error: 'Purchase not found' },
-        { status: 404 }
-      )
-    }
-
+    const { id } = await params
+    const purchase = await db.purchase.findUnique({ where: { id }, include: { product: true } })
+    if (!purchase) return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
     return NextResponse.json(purchase)
   } catch (error) {
-    console.error('[GET /api/inventory/purchases/:id] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch purchase' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch purchase' }, { status: 500 })
   }
 }
 
-// PATCH /api/inventory/purchases/[id] - Modifier un achat
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await req.json()
 
     // Récupérer l'achat actuel pour calculer le delta de stock
@@ -118,13 +100,12 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/inventory/purchases/[id] - Supprimer un achat
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     // Récupérer l'achat pour ajuster le stock
     const purchase = await db.purchase.findUnique({

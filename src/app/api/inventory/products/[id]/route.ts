@@ -47,10 +47,10 @@ export async function GET(
 // PATCH /api/inventory/products/[id] - Modifier un produit
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await req.json()
 
     const product = await db.inventoryProduct.update({
@@ -69,32 +69,24 @@ export async function PATCH(
       },
     })
 
-    console.log('[PATCH /api/inventory/products/:id] Updated:', product.name)
     return NextResponse.json(product)
   } catch (error) {
     console.error('[PATCH /api/inventory/products/:id] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to update product' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 })
   }
 }
 
 // DELETE /api/inventory/products/[id] - Supprimer un produit
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const force = req.nextUrl.searchParams.get('force') === 'true'
 
-    // Vérifier qu'il n'y a pas d'achats liés (sauf si force=true)
     if (!force) {
-      const purchasesCount = await db.purchase.count({
-        where: { productId: id },
-      })
-
+      const purchasesCount = await db.purchase.count({ where: { productId: id } })
       if (purchasesCount > 0) {
         return NextResponse.json(
           { error: 'Cannot delete product with existing purchases' },
@@ -102,21 +94,13 @@ export async function DELETE(
         )
       }
     } else {
-      // Force : supprimer d'abord tous les achats liés
       await db.purchase.deleteMany({ where: { productId: id } })
     }
 
-    await db.inventoryProduct.delete({
-      where: { id },
-    })
-
-    console.log('[DELETE /api/inventory/products/:id] Deleted:', id)
+    await db.inventoryProduct.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[DELETE /api/inventory/products/:id] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete product' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 })
   }
 }
