@@ -350,7 +350,7 @@ function MenuContent() {
         <div className="px-4 pt-2">
           <div className="relative rounded-2xl overflow-hidden shadow-md">
             <img
-              src={coverImage.coverImage}
+              src={coverImage.coverImage.startsWith('/uploads/') ? `/api/files/${coverImage.coverImage.replace('/uploads/', '')}` : coverImage.coverImage}
               alt="Cover"
               className="w-full h-40 object-cover"
             />

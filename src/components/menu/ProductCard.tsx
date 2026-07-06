@@ -1,5 +1,14 @@
 import type { Locale } from '@/lib/locale'
 
+// Convertit /uploads/... en /api/files/... pour servir les fichiers uploadés en production
+function toFileUrl(url: string | null): string | null {
+  if (!url) return null
+  if (url.startsWith('/uploads/')) {
+    return `/api/files/${url.replace('/uploads/', '')}`
+  }
+  return url
+}
+
 interface ProductCardProps {
   product: {
     id: string
@@ -35,7 +44,7 @@ export function ProductCard({ product, onAdd, onRemove, quantityInCart, locale, 
       <div className="relative aspect-[4/3] bg-[#F8F5F0] overflow-hidden">
         {product.image ? (
           <img 
-            src={product.image} 
+            src={toFileUrl(product.image) ?? product.image} 
             alt={isRTL ? product.nameAr || product.name : product.name}
             className="w-full h-full object-cover"
             loading="lazy"

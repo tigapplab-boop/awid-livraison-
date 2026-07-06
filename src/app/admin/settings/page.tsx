@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MapPin, Phone, AlertTriangle, Save, Image, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MapPin, Phone, AlertTriangle, Save, Image, Plus, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { compressAndPrepare } from '@/bm/lib/image-compress'
 
 export default function AdminSettingsPage() {
   const [restaurantInfo, setRestaurantInfo] = useState({
@@ -112,6 +113,7 @@ export default function AdminSettingsPage() {
 
   const [uploadingGallery, setUploadingGallery] = useState(false)
   const [galleryError, setGalleryError] = useState<string | null>(null)
+  const [deletingUrl, setDeletingUrl] = useState<string | null>(null)
 
   const handleGalleryFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -121,8 +123,16 @@ export default function AdminSettingsPage() {
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
-      const body = new FormData()
-      body.append('image', file)
+
+      // Compression côté client — aucune limite de taille pour l'utilisateur
+      let body: FormData
+      try {
+        body = await compressAndPrepare(file, 'image', { maxWidth: 1200, maxHeight: 1200, quality: 0.82 })
+      } catch {
+        // Si Canvas échoue (env sans DOM), envoyer le fichier original
+        body = new FormData()
+        body.append('image', file)
+      }
 
       const res = await fetch('/api/settings/restaurant-info/gallery-upload', {
         method: 'POST',
@@ -137,6 +147,7 @@ export default function AdminSettingsPage() {
         return
       }
 
+      // La route sauvegarde déjà en DB — on met à jour l'état local
       setRestaurantInfo((prev) => ({
         ...prev,
         gallery: [...prev.gallery, data.url],
@@ -146,16 +157,37 @@ export default function AdminSettingsPage() {
       setGalleryError('Erreur réseau lors du chargement de la photo')
     } finally {
       setUploadingGallery(false)
-      // Permet de réuploader le même fichier une deuxième fois si besoin
       e.target.value = ''
     }
   }
 
-  const removeGalleryImage = (index: number) => {
-    setRestaurantInfo({
-      ...restaurantInfo,
-      gallery: restaurantInfo.gallery.filter((_, i) => i !== index),
-    })
+  const removeGalleryImage = async (url: string) => {
+    setDeletingUrl(url)
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+      const res = await fetch('/api/settings/restaurant-info/gallery-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ url }),
+      })
+
+      if (res.ok) {
+        setRestaurantInfo((prev) => ({
+          ...prev,
+          gallery: prev.gallery.filter((u) => u !== url),
+        }))
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setGalleryError(data.error || 'Erreur lors de la suppression')
+      }
+    } catch {
+      setGalleryError('Erreur réseau lors de la suppression')
+    } finally {
+      setDeletingUrl(null)
+    }
   }
 
   return (
@@ -308,7 +340,7 @@ export default function AdminSettingsPage() {
 
                 {/* Add new image — chargement direct du fichier */}
                 <div className="mb-4">
-                  <label className="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-bm-primary/40 rounded-lg cursor-pointer hover:bg-bm-primary/5 transition-colors">
+                  <label className={`flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${uploadingGallery ? 'opacity-60 cursor-not-allowed' : 'border-bm-primary/40 hover:bg-bm-primary/5'}`}>
                     <input
                       type="file"
                       accept="image/*"
@@ -316,34 +348,45 @@ export default function AdminSettingsPage() {
                       disabled={uploadingGallery}
                       onChange={handleGalleryFileSelect}
                     />
-                    <Plus className="w-4 h-4 text-bm-primary" />
+                    {uploadingGallery ? (
+                      <Loader2 className="w-4 h-4 text-bm-primary animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4 text-bm-primary" />
+                    )}
                     <span className="text-sm font-medium text-stone-700">
-                      {uploadingGallery ? 'Chargement en cours...' : 'Choisir une photo depuis votre appareil'}
+                      {uploadingGallery ? 'Compression et chargement...' : 'Choisir une photo depuis votre appareil'}
                     </span>
                   </label>
                   {galleryError && (
                     <p className="text-sm text-red-600 mt-2">⚠ {galleryError}</p>
                   )}
-                  <p className="text-xs text-stone-400 mt-1">JPG, PNG ou WebP — 5 Mo maximum</p>
+                  <p className="text-xs text-stone-400 mt-1">
+                    Toutes tailles acceptées — compression automatique avant envoi
+                  </p>
                 </div>
 
                 {/* Gallery preview */}
                 {restaurantInfo.gallery.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {restaurantInfo.gallery.map((url, index) => (
-                      <div key={index} className="relative group">
+                      <div key={url} className="relative group">
                         <img
-                          src={url}
+                          src={url.startsWith('/uploads/') ? `/api/files/${url.replace('/uploads/', '')}` : url}
                           alt={`Galerie ${index + 1}`}
                           className="w-full h-32 object-cover rounded-lg border-2 border-stone-200"
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                          <button
-                            onClick={() => removeGalleryImage(index)}
-                            className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
+                          {deletingUrl === url ? (
+                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                          ) : (
+                            <button
+                              onClick={() => removeGalleryImage(url)}
+                              className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                              title="Supprimer cette photo"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          )}
                         </div>
                         <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                           #{index + 1}

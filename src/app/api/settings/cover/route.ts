@@ -64,9 +64,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Le fichier doit être une image' }, { status: 400 });
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Image trop grande (max 5MB)' }, { status: 400 });
+    // Pas de limite stricte — la compression est faite côté client
+    // On garde 10 Mo comme filet de sécurité serveur
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Image trop grande (max 10 Mo)' }, { status: 400 });
     }
 
     // Delete old cover image if exists

@@ -7,6 +7,15 @@ interface RestaurantGalleryProps {
   images: string[]
 }
 
+// Convertit l'URL stockée (/uploads/...) en URL de service (/api/files/...)
+function toFileUrl(url: string): string {
+  if (!url) return url
+  if (url.startsWith('/uploads/')) {
+    return `/api/files/${url.replace('/uploads/', '')}`
+  }
+  return url
+}
+
 export function RestaurantGallery({ images }: RestaurantGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -31,7 +40,7 @@ export function RestaurantGallery({ images }: RestaurantGalleryProps) {
           {/* Main Image */}
           <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100">
             <img
-              src={images[currentIndex]}
+              src={toFileUrl(images[currentIndex])}
               alt={`Restaurant - Photo ${currentIndex + 1}`}
               className="w-full h-full object-cover"
             />
@@ -78,7 +87,7 @@ export function RestaurantGallery({ images }: RestaurantGalleryProps) {
                   }`}
                 >
                   <img
-                    src={image}
+                    src={toFileUrl(image)}
                     alt={`Miniature ${index + 1}`}
                     className="w-full h-full object-cover"
                   />

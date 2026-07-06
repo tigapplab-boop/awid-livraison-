@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { compressAndPrepare } from '@/bm/lib/image-compress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
@@ -219,14 +220,22 @@ export default function PromoManagementPage() {
 
     setUploadingCover(true)
     try {
-      const formData = new FormData()
-      formData.append('image', file)
+      // Compression automatique avant envoi — aucune limite de taille pour l'utilisateur
+      let formData: FormData
+      try {
+        formData = await compressAndPrepare(file, 'image', {
+          maxWidth: 1400,
+          maxHeight: 600,
+          quality: 0.85,
+        })
+      } catch {
+        formData = new FormData()
+        formData.append('image', file)
+      }
 
       const res = await fetch('/api/settings/cover', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       })
 
@@ -242,6 +251,7 @@ export default function PromoManagementPage() {
       showMessage('error', err instanceof Error ? err.message : 'Erreur')
     } finally {
       setUploadingCover(false)
+      e.target.value = ''
     }
   }
 
@@ -375,7 +385,7 @@ export default function PromoManagementPage() {
                   <Label className="text-sm font-semibold">Photo actuelle</Label>
                   <div className="relative rounded-xl overflow-hidden border-2 border-stone-200">
                     <img
-                      src={coverImage.coverImage}
+                      src={coverImage.coverImage.startsWith('/uploads/') ? `/api/files/${coverImage.coverImage.replace('/uploads/', '')}` : coverImage.coverImage}
                       alt="Couverture"
                       className="w-full h-48 object-cover"
                     />
@@ -401,7 +411,7 @@ export default function PromoManagementPage() {
                     <p className="text-sm font-medium text-stone-700">
                       {uploadingCover ? 'Upload en cours...' : 'Cliquez pour uploader'}
                     </p>
-                    <p className="text-xs text-stone-500 mt-1">PNG, JPG, WEBP (max 5MB)</p>
+                    <p className="text-xs text-stone-500 mt-1">Toutes tailles — compression automatique</p>
                   </div>
                   <input
                     type="file"
