@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { verifyAuth } from '@/bm/lib/auth'
+import { authenticateRequest } from '@/bm/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,12 +28,9 @@ export async function POST(request: NextRequest) {
     // If userId is provided, use it; otherwise try to get from auth
     let targetUserId = userId
     if (!targetUserId) {
-      const authResult = await verifyAuth(request)
-      if (!authResult.valid || !authResult.userId) {
-        return NextResponse.json(
-          { error: 'Authentication required' },
-          { status: 401 }
-        )
+      const authResult = await authenticateRequest(request)
+      if (authResult instanceof NextResponse) {
+        return authResult // Return the 401 error response
       }
       targetUserId = authResult.userId
     }
