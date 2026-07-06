@@ -191,17 +191,17 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      {/* Fixed Header */}
+    <div className="bg-stone-50">
+      {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-bm-primary/10 rounded-lg">
-              <MapPin className="w-6 h-6 text-bm-primary" />
+              <MapPin className="w-5 h-5 text-bm-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-stone-900">Paramètres Restaurant</h1>
-              <p className="text-sm text-stone-500">Configuration des informations et maintenance</p>
+              <h1 className="text-xl font-bold text-stone-900">Paramètres Restaurant</h1>
+              <p className="text-xs text-stone-500">Configuration des informations et maintenance</p>
             </div>
           </div>
         </div>
