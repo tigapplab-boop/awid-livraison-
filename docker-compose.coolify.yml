@@ -7,6 +7,7 @@ services:
     environment:
       - UPLOAD_DIR=/app/upload
       - EMIT_SERVICE_URL=http://socket-service:3004
+      - SOCKET_SERVICE_URL=http://socket-service:3003
     depends_on:
       db:
         condition: service_healthy

@@ -17,16 +17,20 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_livreur_token') || localStorage.getItem('bm_admin_token') : null;
-    
-    // URL du socket-service
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3003';
-    
+    const token = typeof window !== 'undefined'
+      ? localStorage.getItem('bm_livreur_token') || localStorage.getItem('bm_admin_token')
+      : null
+
+    // On se connecte via le MÊME domaine que l'app (burgerminute.giize.com)
+    // Next.js proxifie /socket.io/* vers le socket-service interne via next.config.ts
+    // → Plus besoin d'un second domaine / SSL séparé
+    const socketUrl = typeof window !== 'undefined'
+      ? window.location.origin   // https://burgerminute.giize.com en prod, localhost:3000 en dev
+      : (process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000')
+
     socket = io(socketUrl, {
       auth: { token },
       path: '/socket.io/',
-      // Commencer par polling pour établir la connexion, puis upgrade vers WebSocket
-      // Certains proxies (Coolify/Traefik) ne supportent pas l'upgrade WS direct
       transports: ['polling', 'websocket'],
       autoConnect: true,
       reconnection: true,
@@ -34,21 +38,21 @@ export function getSocket(): Socket {
       reconnectionDelay: 2000,
       reconnectionDelayMax: 10000,
       timeout: 10000,
-    });
+    })
 
     socket.on('connect', () => {
       console.log('[Socket] Connected:', socket?.id)
     })
 
     socket.on('connect_error', (error) => {
-      console.error('[Socket] Connection error:', error.message);
-    });
+      console.error('[Socket] Connection error:', error.message)
+    })
 
     socket.on('disconnect', (reason) => {
       console.warn('[Socket] Disconnected:', reason)
     })
   }
-  return socket;
+  return socket
 }
 
 export function connect(): Socket {
