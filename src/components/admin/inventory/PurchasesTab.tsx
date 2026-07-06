@@ -48,15 +48,19 @@ export default function PurchasesTab() {
 
   const fetchPurchases = async () => {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
       const params = new URLSearchParams()
       if (filter === 'paid') params.append('isPaid', 'true')
       if (filter === 'unpaid') params.append('isPaid', 'false')
 
-      const res = await fetch(`/api/inventory/purchases?${params}`)
+      const res = await fetch(`/api/inventory/purchases?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       const data = await res.json()
-      setPurchases(data)
+      setPurchases(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Failed to fetch purchases:', error)
+      setPurchases([])
     } finally {
       setLoading(false)
     }
@@ -85,10 +89,14 @@ export default function PurchasesTab() {
   }
 
   const handleMarkPaid = async (id: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
     try {
       await fetch(`/api/inventory/purchases/${id}/pay`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ paymentMethod: 'Espèces' }),
       })
       fetchPurchases()

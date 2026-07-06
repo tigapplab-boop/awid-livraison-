@@ -28,9 +28,17 @@ export default function ReportsTab() {
 
   const fetchSummary = async () => {
     try {
-      const res = await fetch('/api/inventory/reports/summary')
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+      const res = await fetch('/api/inventory/reports/summary', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       const data = await res.json()
-      setSummary(data)
+      // Vérifier que c'est bien un objet summary (pas une erreur)
+      if (data && typeof data.totalProducts === 'number') {
+        setSummary(data)
+      } else {
+        console.error('Invalid summary data:', data)
+      }
     } catch (error) {
       console.error('Failed to fetch summary:', error)
     } finally {

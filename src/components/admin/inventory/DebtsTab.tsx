@@ -25,11 +25,15 @@ export default function DebtsTab() {
 
   const fetchDebts = async () => {
     try {
-      const res = await fetch('/api/inventory/reports/debts')
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+      const res = await fetch('/api/inventory/reports/debts', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       const data = await res.json()
-      setDebts(data)
+      setDebts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Failed to fetch debts:', error)
+      setDebts([])
     } finally {
       setLoading(false)
     }
@@ -46,14 +50,17 @@ export default function DebtsTab() {
   const handlePayAll = async (supplier: string) => {
     const report = debts.find((d) => d.supplier === supplier)
     if (!report) return
-
     if (!confirm(`Marquer tous les achats de ${supplier} comme payés ?`)) return
 
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
     try {
       const purchaseIds = report.purchases.map((p) => p.id)
       await fetch('/api/inventory/purchases/pay-multiple', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ purchaseIds, paymentMethod: 'Espèces' }),
       })
       fetchDebts()

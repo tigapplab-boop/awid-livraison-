@@ -41,11 +41,15 @@ export default function ProductsTab() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/inventory/products')
+      const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
+      const res = await fetch('/api/inventory/products', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       const data = await res.json()
-      setProducts(data)
+      setProducts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Failed to fetch products:', error)
+      setProducts([])
     } finally {
       setLoading(false)
     }
@@ -63,9 +67,12 @@ export default function ProductsTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer ce produit ?')) return
-
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bm_token') : null
     try {
-      const res = await fetch(`/api/inventory/products/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/inventory/products/${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) {
         const error = await res.json()
         alert(error.error || 'Erreur lors de la suppression')
