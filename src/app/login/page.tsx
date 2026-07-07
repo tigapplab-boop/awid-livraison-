@@ -13,35 +13,41 @@ export default function UnifiedLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [needsPasswordChange, setNeedsPasswordChange] = useState(false)
+  const [existingSession, setExistingSession] = useState<{ name: string; role: string } | null>(null)
 
-  // Only run this once on mount, don't auto redirect if we just got kicked out
+  // Vérifier la session réelle au lieu de rediriger automatiquement
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('kicked') === '1') {
       // Clear storage if we were kicked
       localStorage.removeItem('bm_token')
       localStorage.removeItem('bm_user')
-      // remove cookie manually just in case
       document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
       return
     }
 
-    const token = localStorage.getItem('bm_token')
-    const userStr = localStorage.getItem('bm_user')
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        if (user.role === 'ADMIN') {
-          window.location.href = '/admin/dashboard'
-        } else if (user.role === 'LIVREUR') {
-          window.location.href = '/livreur/dashboard'
+    // Vérifier la session côté serveur (cookie)
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated && data.user) {
+          setExistingSession({ name: data.user.name, role: data.user.role })
         }
-      } catch {
-        localStorage.removeItem('bm_token')
-        localStorage.removeItem('bm_user')
-      }
-    }
+      })
+      .catch(() => {
+        // Ignorer les erreurs de vérification
+      })
   }, [])
+
+  const handleContinueExistingSession = () => {
+    if (!existingSession) return
+    
+    if (existingSession.role === 'ADMIN') {
+      window.location.href = '/admin/dashboard'
+    } else if (existingSession.role === 'LIVREUR') {
+      window.location.href = '/livreur/dashboard'
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,6 +126,29 @@ export default function UnifiedLoginPage() {
 
         {/* Login Card */}
         <div className="bg-white rounded-[32px] shadow-xl shadow-stone-200/50 border border-stone-100/50 p-8">
+          {/* Existing session banner */}
+          {existingSession && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
+              <p className="text-sm font-medium text-green-900 mb-3">
+                Vous êtes déjà connecté en tant que <strong>{existingSession.name}</strong>
+              </p>
+              <button
+                type="button"
+                onClick={handleContinueExistingSession}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors"
+              >
+                Continuer vers le tableau de bord →
+              </button>
+              <button
+                type="button"
+                onClick={() => setExistingSession(null)}
+                className="w-full mt-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"
+              >
+                Se connecter avec un autre compte
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {needsPasswordChange && !error && (
               <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-2xl text-blue-700 text-sm font-medium">
