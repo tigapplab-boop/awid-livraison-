@@ -42,7 +42,6 @@ const NAV_GROUPS = [
     title: 'Catalogue',
     items: [
       { href: '/admin/products', label: 'Produits', icon: Package },
-      { href: '/admin/sauces', label: 'Sauces', icon: Droplet },
       { href: '/admin/promo', label: 'Promos', icon: Megaphone },
       { href: '/admin/inventory', label: 'Inventaire', icon: Warehouse },
     ],

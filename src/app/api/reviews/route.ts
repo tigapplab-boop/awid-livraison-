@@ -60,8 +60,16 @@ export async function GET(request: NextRequest) {
 // POST - Create review (requires valid ClientToken and DELIVERED order)
 export async function POST(request: NextRequest) {
   try {
-    // Récupérer le token client depuis le cookie
-    const clientToken = request.cookies.get('bm_client_token')?.value
+    // Récupérer le token client depuis le cookie OU le header Authorization
+    let clientToken = request.cookies.get('bm_client_token')?.value
+    
+    // Si pas de cookie, vérifier le header Authorization
+    if (!clientToken) {
+      const authHeader = request.headers.get('Authorization')
+      if (authHeader?.startsWith('Bearer ')) {
+        clientToken = authHeader.substring(7)
+      }
+    }
 
     if (!clientToken) {
       return NextResponse.json(

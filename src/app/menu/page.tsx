@@ -248,26 +248,17 @@ function MenuContent() {
   };
 
   const handleAddSauce = (sauce: { id: string; name: string; nameAr: string | null }) => {
-    const burgersInCart = items.filter((item) => {
-      const category = categories.find(c => c.id === item.product.categoryId);
-      return category && (
-        category.name.toLowerCase().includes('burger') ||
-        category.name.toLowerCase().includes('sandwich')
-      );
-    });
+    // Filtrer uniquement les produits principaux (non attachés = burgers, sandwichs, etc.)
+    const burgersInCart = items.filter((item) => !item.attachedToProductId);
 
     if (burgersInCart.length === 0) {
       setToastMessage(isRTL ? 'أضف برجر أولاً قبل اختيار الصلصة' : 'Ajoutez d\'abord un burger avant de choisir une sauce');
       return;
     }
 
-    if (burgersInCart.length === 1) {
-      const product = categories.flatMap(c => c.products).find(p => p.id === sauce.id);
-      if (product) {
-        addItem(product, 1, burgersInCart[0].product.id);
-      }
-      return;
-    }
+    // Toujours afficher le picker si on a des burgers (même s'il n'y en a qu'un)
+    const product = categories.flatMap(c => c.products).find(p => p.id === sauce.id);
+    if (!product) return;
 
     setPendingSauce(sauce);
     setSaucePickerOpen(true);
@@ -592,13 +583,7 @@ function MenuContent() {
           open={saucePickerOpen}
           onOpenChange={setSaucePickerOpen}
           sauce={pendingSauce}
-          burgersInCart={items.filter((item) => {
-            const category = categories.find(c => c.id === item.product.categoryId);
-            return category && (
-              category.name.toLowerCase().includes('burger') ||
-              category.name.toLowerCase().includes('sandwich')
-            );
-          })}
+          burgersInCart={items.filter((item) => !item.attachedToProductId)}
           onSelect={handleSauceSelect}
           onSkip={handleSauceSkip}
           language={locale === 'ar' ? 'ar' : 'fr'}

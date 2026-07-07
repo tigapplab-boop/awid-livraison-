@@ -74,7 +74,12 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      return NextResponse.next()
+      // Add cache-control headers to prevent browser caching of protected pages
+      const response = NextResponse.next()
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+      response.headers.set('Pragma', 'no-cache')
+      response.headers.set('Expires', '0')
+      return response
     } catch {
       // Token invalide → vider le cookie et rediriger vers login
       const response = NextResponse.redirect(new URL('/login', request.url))

@@ -16,7 +16,7 @@ import type { Order, OrderStatus } from '@/bm/types';
 import { formatPrice } from '@/bm/lib/format';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
-import { X, Check, Package, Bike, MapPin, Clock, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Check, Package, Bike, MapPin, Clock, CreditCard, ChevronLeft, ChevronRight, Star, Send } from 'lucide-react';
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '';
@@ -42,6 +42,13 @@ export default function OrderPage() {
   const [error, setError] = useState<string | null>(null);
   const socketConnected = useRef(false);
 
+  // Review form states
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
   const fetchOrder = useCallback(async () => {
     try {
       const data = await getOrder(orderId);
@@ -52,6 +59,48 @@ export default function OrderPage() {
       setLoading(false);
     }
   }, [orderId, isRTL]);
+
+  const submitReview = async () => {
+    if (!order) return;
+    
+    setReviewSubmitting(true);
+    try {
+      const clientToken = localStorage.getItem('bm_clientToken');
+      if (!clientToken) {
+        alert(isRTL ? 'خطأ في المصادقة' : 'Erreur d\'authentification');
+        return;
+      }
+
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${clientToken}`,
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          type: 'SERVICE',
+          rating: reviewRating,
+          comment: reviewComment.trim() || null,
+        }),
+      });
+
+      if (res.ok) {
+        setReviewSubmitted(true);
+        setShowReviewForm(false);
+        setTimeout(() => {
+          setReviewSubmitted(false);
+        }, 5000);
+      } else {
+        alert(isRTL ? 'فشل إرسال التقييم' : 'Échec de l\'envoi de l\'avis');
+      }
+    } catch (err) {
+      console.error('Review submission error:', err);
+      alert(isRTL ? 'خطأ في الشبكة' : 'Erreur réseau');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     fetchOrder();
@@ -92,6 +141,59 @@ export default function OrderPage() {
       router.replace(`/order/${savedOrderId}`);
     }
   }, [orderId, router]);
+
+  // Check if review already submitted
+  useEffect(() => {
+    if (order?.status === 'DELIVERED') {
+      const reviewKey = `bm_review_${orderId}`;
+      const submitted = localStorage.getItem(reviewKey);
+      setReviewSubmitted(!!submitted);
+    }
+  }, [order, orderId]);
+
+  // Submit review
+  const handleSubmitReview = async () => {
+    if (!order) return;
+
+    const clientToken = order.clientToken || localStorage.getItem('bm_clientToken');
+    if (!clientToken) {
+      alert(isRTL ? 'خطأ في المصادقة' : 'Erreur d\'authentification');
+      return;
+    }
+
+    setReviewSubmitting(true);
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${clientToken}`,
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          type: 'SERVICE',
+          rating: reviewRating,
+          comment: reviewComment.trim() || null,
+        }),
+      });
+
+      if (res.ok) {
+        const reviewKey = `bm_review_${orderId}`;
+        localStorage.setItem(reviewKey, 'true');
+        setReviewSubmitted(true);
+        setShowReviewForm(false);
+        setReviewComment('');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(isRTL ? 'فشل إرسال التقييم' : errorData.error || 'Échec de l\'envoi de l\'avis');
+      }
+    } catch (err) {
+      console.error('Review submission error:', err);
+      alert(isRTL ? 'فشل إرسال التقييم' : 'Échec de l\'envoi de l\'avis');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   if (!isMounted) return null;
 
@@ -347,6 +449,111 @@ export default function OrderPage() {
             </div>
           </div>
         </div>
+
+        {/* Review section - Only show if order is delivered */}
+        {order.status === 'DELIVERED' && !reviewSubmitted && (
+          <div className="bg-gradient-to-br from-bm-primary/5 to-orange-100/50 rounded-3xl p-5 shadow-sm border-2 border-bm-primary/20">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-bm-primary/20 flex items-center justify-center">
+                <Star className="w-4 h-4 text-bm-primary" fill="currentColor" />
+              </div>
+              <h3 className="text-base font-bold text-stone-900">
+                {isRTL ? 'قيّم تجربتك' : 'Évaluez votre expérience'}
+              </h3>
+            </div>
+
+            {!showReviewForm ? (
+              <button
+                onClick={() => setShowReviewForm(true)}
+                className="w-full bg-white hover:bg-stone-50 text-stone-900 font-bold py-3 px-4 rounded-2xl transition-colors border-2 border-bm-primary/30 shadow-sm"
+              >
+                {isRTL ? '✨ اترك تقييمًا' : '✨ Laisser un avis'}
+              </button>
+            ) : (
+              <div className="space-y-4">
+                {/* Star rating */}
+                <div className="flex flex-col items-center gap-3 py-3">
+                  <p className="text-sm font-medium text-stone-700">
+                    {isRTL ? 'اختر تقييمك' : 'Votre note'}
+                  </p>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="transition-transform hover:scale-110 active:scale-95"
+                      >
+                        <Star
+                          className={`w-8 h-8 ${
+                            star <= reviewRating
+                              ? 'fill-bm-primary text-bm-primary'
+                              : 'text-stone-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comment textarea */}
+                <div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder={isRTL ? 'شارك تجربتك معنا (اختياري)' : 'Partagez votre expérience (optionnel)'}
+                    className="w-full min-h-[100px] p-3 bg-white border-2 border-stone-200 rounded-2xl text-sm focus:outline-none focus:border-bm-primary resize-none"
+                    dir={isRTL ? 'rtl' : 'ltr'}
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-stone-500 mt-1 text-right">
+                    {reviewComment.length}/500
+                  </p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowReviewForm(false)}
+                    disabled={reviewSubmitting}
+                    className="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold py-3 px-4 rounded-2xl transition-colors disabled:opacity-50"
+                  >
+                    {isRTL ? 'إلغاء' : 'Annuler'}
+                  </button>
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={reviewSubmitting}
+                    className="flex-1 bg-bm-primary hover:bg-bm-primary/90 text-stone-900 font-bold py-3 px-4 rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {reviewSubmitting ? (
+                      <div className="w-5 h-5 border-2 border-stone-900 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        {isRTL ? 'إرسال' : 'Envoyer'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Thank you message if review submitted */}
+        {order.status === 'DELIVERED' && reviewSubmitted && (
+          <div className="bg-green-50 border-2 border-green-200 rounded-3xl p-5 text-center">
+            <div className="w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
+              <Check className="w-6 h-6 text-green-600" />
+            </div>
+            <p className="font-bold text-green-900 mb-1">
+              {isRTL ? 'شكرًا لتقييمك!' : 'Merci pour votre avis !'}
+            </p>
+            <p className="text-sm text-green-700">
+              {isRTL ? 'رأيك يساعدنا على التحسين' : 'Votre retour nous aide à nous améliorer'}
+            </p>
+          </div>
+        )}
         
         {/* Bottom spacer */}
         <div className="h-16"></div>

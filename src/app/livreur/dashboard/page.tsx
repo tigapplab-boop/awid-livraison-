@@ -161,6 +161,23 @@ export default function LivreurDashboard() {
       })
   }, [])
 
+  // Prevent back navigation after logout
+  useEffect(() => {
+    const preventBack = () => {
+      window.history.pushState(null, '', window.location.href)
+    }
+    
+    // Push initial state
+    preventBack()
+    
+    // Listen for back button
+    window.addEventListener('popstate', preventBack)
+    
+    return () => {
+      window.removeEventListener('popstate', preventBack)
+    }
+  }, [])
+
   // ========================================
   // Toast
   // ========================================

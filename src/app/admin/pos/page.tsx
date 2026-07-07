@@ -152,9 +152,8 @@ export default function POSPage() {
   }
 
   const handleAddSauce = (sauce: { id: string; name: string; nameAr: string | null }) => {
-    const burgersInCart = cart.filter((item) => {
-      return isBurger(item.product, categories)
-    })
+    // Filtrer uniquement les produits principaux (non attachés)
+    const burgersInCart = cart.filter((item) => !item.attachedToProductId)
 
     if (burgersInCart.length === 0) {
       // No burgers, add standalone
@@ -165,16 +164,7 @@ export default function POSPage() {
       return
     }
 
-    if (burgersInCart.length === 1) {
-      // Only one burger, attach automatically
-      const product = categories.flatMap(c => c.products).find(p => p.id === sauce.id)
-      if (product) {
-        setCart((prev) => [...prev, { product, quantity: 1, attachedToProductId: burgersInCart[0].product.id }])
-      }
-      return
-    }
-
-    // Multiple burgers, show picker
+    // Toujours afficher le picker (même pour 1 seul burger)
     setPendingSauce(sauce)
     setSaucePickerOpen(true)
   }
@@ -770,7 +760,7 @@ export default function POSPage() {
           open={saucePickerOpen}
           onOpenChange={setSaucePickerOpen}
           sauce={pendingSauce}
-          burgersInCart={cart.filter((item) => isBurger(item.product, categories))}
+          burgersInCart={cart.filter((item) => !item.attachedToProductId)}
           onSelect={handleSauceSelect}
           onSkip={handleSauceSkip}
           language="fr"
