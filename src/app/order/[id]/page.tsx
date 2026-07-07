@@ -51,8 +51,26 @@ export default function OrderPage() {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const data = await getOrder(orderId);
-      setOrder(data);
+      // Try to get order via client API first (uses cookie)
+      const clientRes = await fetch('/api/clients/me');
+      if (clientRes.ok) {
+        const clientData = await clientRes.json();
+        const foundOrder = clientData.orders?.find((o: Order) => o.id === orderId);
+        if (foundOrder) {
+          setOrder(foundOrder);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fallback: try with clientToken from localStorage
+      const clientToken = localStorage.getItem('bm_clientToken');
+      if (clientToken) {
+        const data = await getOrder(orderId);
+        setOrder(data);
+      } else {
+        setError(isRTL ? 'الطلب غير موجود' : 'Commande introuvable');
+      }
     } catch {
       setError(isRTL ? 'الطلب غير موجود' : 'Commande introuvable');
     } finally {
