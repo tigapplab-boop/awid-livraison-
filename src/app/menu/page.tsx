@@ -12,6 +12,7 @@ import { CategoryTabs } from '@/components/menu/CategoryTabs';
 import { PromoBanner } from '@/components/menu/PromoBanner';
 import { RestaurantSection } from '@/components/menu/RestaurantSection';
 import { OrderHistoryLink } from '@/components/menu/OrderHistoryLink';
+import { ReviewsSection } from '@/components/menu/ReviewsSection';
 import { useLocale } from '@/lib/locale';
 import { t } from '@/lib/i18n';
 
@@ -425,6 +426,9 @@ function MenuContent() {
           </div>
         </Link>
       </div>
+
+      {/* Reviews Section */}
+      <ReviewsSection locale={locale} isRTL={isRTL} />
 
       {/* Floating Cart Bar */}
       <div className={`
