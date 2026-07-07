@@ -16,7 +16,6 @@ import { formatDA } from '@/bm/lib/format'
 import KitchenTicket from '@/components/pos/KitchenTicket'
 import { usePrint } from '@/hooks/use-print'
 import SupplementPicker from '@/components/SupplementPicker'
-import SaucePicker from '@/components/menu/SaucePicker'
 import { QuickPrintButton } from '@/components/pos/PrinterButton'
 import { printTicket } from '@/bm/lib/android-printer'
 
@@ -27,26 +26,7 @@ interface CartItem {
 }
 
 // Category names detection
-const SUPPLEMENT_CATEGORY_NAMES = ['Suppléments', 'Supplements', 'suppléments', 'supplements']
-const SAUCE_CATEGORY_NAMES = ['Sauces', 'sauces', 'Sauce', 'sauce', 'صلصة', 'صلصات']
-
-function isSupplement(product: Product, categories: CategoryWithProducts[]): boolean {
-  const category = categories.find(c => c.id === product.categoryId)
-  return category ? SUPPLEMENT_CATEGORY_NAMES.includes(category.name) : false
-}
-
-function isSauce(product: Product, categories: CategoryWithProducts[]): boolean {
-  const category = categories.find(c => c.id === product.categoryId)
-  return category ? SAUCE_CATEGORY_NAMES.includes(category.name) : false
-}
-
-function isBurger(product: Product, categories: CategoryWithProducts[]): boolean {
-  const category = categories.find(c => c.id === product.categoryId)
-  return category ? (
-    category.name.toLowerCase().includes('burger') ||
-    category.name.toLowerCase().includes('sandwich')
-  ) : false
-}
+// (Removed old supplement/sauce detection functions - now using product.isAttachable)
 
 interface Livreur {
   id: string
@@ -78,8 +58,6 @@ export default function POSPage() {
   // Supplement/Sauce picker state
   const [supplementPickerOpen, setSupplementPickerOpen] = useState(false)
   const [pendingSupplement, setPendingSupplement] = useState<Product | null>(null)
-  const [saucePickerOpen, setSaucePickerOpen] = useState(false)
-  const [pendingSauce, setPendingSauce] = useState<{ id: string; name: string; nameAr: string | null } | null>(null)
 
   // Printing
   const ticketRef = useRef<HTMLDivElement>(null)
@@ -116,17 +94,9 @@ export default function POSPage() {
   }, [fetchData])
 
   const addToCart = (product: Product) => {
-    // Check if product is a supplement
-    const isSup = isSupplement(product, categories)
-    if (isSup) {
-      handleAddSupplement(product)
-      return
-    }
-
-    // Check if product is a sauce
-    const isSau = isSauce(product, categories)
-    if (isSau) {
-      handleAddSauce({ id: product.id, name: product.name, nameAr: product.nameAr })
+    // Check if product is attachable (supplement, sauce, etc.)
+    if (product.isAttachable) {
+      handleAddAttachableProduct(product)
       return
     }
 
@@ -134,39 +104,16 @@ export default function POSPage() {
     setCart((prev) => [...prev, { product, quantity: 1 }])
   }
 
-  const handleAddSupplement = (product: Product) => {
+  const handleAddAttachableProduct = (product: Product) => {
     const burgersInCart = cart.filter((item) => !item.attachedToProductId)
     if (burgersInCart.length === 0) {
       // No burgers, add standalone
       setCart((prev) => [...prev, { product, quantity: 1 }])
       return
     }
-    if (burgersInCart.length === 1) {
-      // Only one burger, attach automatically
-      setCart((prev) => [...prev, { product, quantity: 1, attachedToProductId: burgersInCart[0].product.id }])
-      return
-    }
-    // Multiple burgers, show picker
+    // Always show picker (even for 1 burger)
     setPendingSupplement(product)
     setSupplementPickerOpen(true)
-  }
-
-  const handleAddSauce = (sauce: { id: string; name: string; nameAr: string | null }) => {
-    // Filtrer uniquement les produits principaux (non attachés)
-    const burgersInCart = cart.filter((item) => !item.attachedToProductId)
-
-    if (burgersInCart.length === 0) {
-      // No burgers, add standalone
-      const product = categories.flatMap(c => c.products).find(p => p.id === sauce.id)
-      if (product) {
-        setCart((prev) => [...prev, { product, quantity: 1 }])
-      }
-      return
-    }
-
-    // Toujours afficher le picker (même pour 1 seul burger)
-    setPendingSauce(sauce)
-    setSaucePickerOpen(true)
   }
 
   const handleSupplementSelect = (attachedToProductId: string) => {
@@ -181,26 +128,6 @@ export default function POSPage() {
       setCart((prev) => [...prev, { product: pendingSupplement, quantity: 1 }])
     }
     setPendingSupplement(null)
-  }
-
-  const handleSauceSelect = (attachedToProductId: string) => {
-    if (pendingSauce) {
-      const product = categories.flatMap(c => c.products).find(p => p.id === pendingSauce.id)
-      if (product) {
-        setCart((prev) => [...prev, { product, quantity: 1, attachedToProductId }])
-      }
-    }
-    setPendingSauce(null)
-  }
-
-  const handleSauceSkip = () => {
-    if (pendingSauce) {
-      const product = categories.flatMap(c => c.products).find(p => p.id === pendingSauce.id)
-      if (product) {
-        setCart((prev) => [...prev, { product, quantity: 1 }])
-      }
-    }
-    setPendingSauce(null)
   }
 
   const updateQuantity = (itemIndex: number, delta: number) => {
@@ -753,19 +680,6 @@ export default function POSPage() {
         onSelect={handleSupplementSelect}
         onSkip={handleSupplementSkip}
       />
-
-      {/* Sauce Picker */}
-      {pendingSauce && (
-        <SaucePicker
-          open={saucePickerOpen}
-          onOpenChange={setSaucePickerOpen}
-          sauce={pendingSauce}
-          burgersInCart={cart.filter((item) => !item.attachedToProductId)}
-          onSelect={handleSauceSelect}
-          onSkip={handleSauceSkip}
-          language="fr"
-        />
-      )}
     </div>
   )
 }

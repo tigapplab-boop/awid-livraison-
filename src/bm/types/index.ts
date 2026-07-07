@@ -11,6 +11,7 @@ export interface Product {
   image: string | null;
   isAvailable: boolean;
   categoryId: string;
+  isAttachable?: boolean; // true = can be attached to a burger (supplements, sauces, etc.)
   category?: Category;
   createdAt?: string; // Optional: not always returned by API
 }

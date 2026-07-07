@@ -114,6 +114,9 @@ model Product {
   isNew     Boolean @default(false) // Badge "NOUVEAU" 
   sortOrder Int     @default(0) // Ordre d'affichage manuel
 
+  // Attachment behavior (for supplements, sauces, etc.)
+  isAttachable Boolean @default(false) // true = peut être attaché à un burger
+
   // Stock management (pour boissons uniquement)
   stockQuantity Int?    @default(0) // Stock disponible (NULL si pas de gestion stock)
   minStockAlert Int?    @default(10) // Alerte si stock < X

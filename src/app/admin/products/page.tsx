@@ -25,6 +25,7 @@ interface ProductFull {
   isAvailable: boolean
   categoryId: string
   isNew: boolean
+  isAttachable: boolean
   sortOrder: number
 }
 
@@ -49,6 +50,7 @@ export default function ProductsPage() {
   const [pCategory, setPCategory] = useState('')
   const [pAvailable, setPAvailable] = useState(true)
   const [pIsNew, setPIsNew] = useState(false)
+  const [pIsAttachable, setPIsAttachable] = useState(false)
   const [pSortOrder, setPSortOrder] = useState('0')
   const [uploading, setUploading] = useState(false)
 
@@ -101,6 +103,7 @@ export default function ProductsPage() {
     setPCategory(categoryId || (categories[0]?.id ?? ''))
     setPAvailable(true)
     setPIsNew(false)
+    setPIsAttachable(false)
     setPSortOrder('0')
     setProductDialog(true)
   }
@@ -115,6 +118,7 @@ export default function ProductsPage() {
     setPCategory(product.categoryId)
     setPAvailable(product.isAvailable)
     setPIsNew(product.isNew || false)
+    setPIsAttachable(product.isAttachable || false)
     setPSortOrder((product.sortOrder || 0).toString())
     setProductDialog(true)
   }
@@ -146,6 +150,7 @@ export default function ProductsPage() {
         isAvailable: pAvailable,
         categoryId: pCategory,
         isNew: pIsNew,
+        isAttachable: pIsAttachable,
         sortOrder: sortOrder,
       }
 
@@ -542,10 +547,14 @@ export default function ProductsPage() {
                 <Switch checked={pIsNew} onCheckedChange={setPIsNew} />
                 <Label>Badge "NOUVEAU"</Label>
               </div>
-              <div>
-                <Label>Ordre d'affichage</Label>
-                <Input value={pSortOrder} onChange={(e) => setPSortOrder(e.target.value)} className="input-bm mt-1" placeholder="0" type="number" />
+              <div className="flex items-center gap-2">
+                <Switch checked={pIsAttachable} onCheckedChange={setPIsAttachable} />
+                <Label>Attachable (Supplément/Sauce)</Label>
               </div>
+            </div>
+            <div>
+              <Label>Ordre d'affichage</Label>
+              <Input value={pSortOrder} onChange={(e) => setPSortOrder(e.target.value)} className="input-bm mt-1" placeholder="0" type="number" />
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={pAvailable} onCheckedChange={setPAvailable} />

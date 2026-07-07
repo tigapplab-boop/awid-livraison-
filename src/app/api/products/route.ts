@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
             isAvailable: true,
             categoryId: true,
             isNew: true,
+            isAttachable: true,
             sortOrder: true,
           },
           orderBy: { sortOrder: 'asc' },
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (authResult instanceof NextResponse) return authResult
 
     const body = await request.json()
-    const { name, nameAr, description, price, image, isAvailable, categoryId, isNew, sortOrder } = body
+    const { name, nameAr, description, price, image, isAvailable, categoryId, isNew, isAttachable, sortOrder } = body
 
     if (!name || !price || !categoryId) {
       return NextResponse.json(
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         isAvailable: isAvailable !== undefined ? isAvailable : true,
         categoryId,
         isNew: isNew !== undefined ? isNew : false,
+        isAttachable: isAttachable !== undefined ? isAttachable : false,
         sortOrder: sortOrder !== undefined ? sortOrder : 0,
       },
       include: { category: true },

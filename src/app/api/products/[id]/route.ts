@@ -33,6 +33,7 @@ export async function PATCH(
     if (body.isAvailable !== undefined) updateData.isAvailable = body.isAvailable
     if (body.categoryId !== undefined) updateData.categoryId = body.categoryId
     if (body.isNew !== undefined) updateData.isNew = body.isNew
+    if (body.isAttachable !== undefined) updateData.isAttachable = body.isAttachable
     if (body.sortOrder !== undefined) updateData.sortOrder = body.sortOrder
 
     const product = await db.product.update({
