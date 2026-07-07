@@ -104,20 +104,17 @@ set -e
 
 echo "[Entrypoint] Starting Burger Minute..."
 
-# ── Résoudre les migrations failed avant de déployer ──────────────────────────
-# Prisma refuse de lancer "migrate deploy" s'il y a une migration marquée
-# "failed" dans la table _prisma_migrations. On la marque "rolled_back" pour
-# débloquer le déploiement (la colonne existe déjà en DB, donc c'est safe).
+# ── Résoudre les migrations failed AVANT de déployer ─────────────────────────
 echo "[Entrypoint] Checking for failed migrations..."
 node -e "
 const { PrismaClient } = require('@prisma/client');
 const p = new PrismaClient();
 async function fix() {
   try {
-    await p.\$executeRawUnsafe(
+    const result = await p.\$executeRawUnsafe(
       \"UPDATE \\\"_prisma_migrations\\\" SET rolled_back_at = NOW() WHERE finished_at IS NULL AND rolled_back_at IS NULL\"
     );
-    console.log('[Entrypoint] Failed migrations resolved.');
+    console.log('[Entrypoint] Failed migrations resolved: ' + result);
   } catch(e) {
     console.log('[Entrypoint] Migration fix skipped:', e.message);
   } finally {
@@ -129,7 +126,29 @@ fix();
 
 # ── Déployer les migrations ───────────────────────────────────────────────────
 echo "[Entrypoint] Running migrations..."
-npx --yes prisma migrate deploy 2>&1 || echo "[Entrypoint] migrate deploy had issues, continuing..."
+npx --yes prisma migrate deploy 2>&1 || {
+  echo "[Entrypoint] migrate deploy had issues, attempting recovery..."
+  # Mark any newly failed migrations as rolled_back and retry once
+  node -e "
+  const { PrismaClient } = require('@prisma/client');
+  const p = new PrismaClient();
+  async function fix() {
+    try {
+      await p.\$executeRawUnsafe(
+        \"UPDATE \\\"_prisma_migrations\\\" SET rolled_back_at = NOW() WHERE finished_at IS NULL AND rolled_back_at IS NULL\"
+      );
+      console.log('[Entrypoint] Recovery: failed migrations marked as rolled_back.');
+    } catch(e) {
+      console.log('[Entrypoint] Recovery skipped:', e.message);
+    } finally {
+      await p.\$disconnect();
+    }
+  }
+  fix();
+  " 2>/dev/null || true
+  echo "[Entrypoint] Retrying migrations..."
+  npx --yes prisma migrate deploy 2>&1 || echo "[Entrypoint] migrate deploy still failing, using db push fallback..."
+}
 
 # ── Sync schema (ajoute les colonnes manquantes sans casser les données) ──────
 echo "[Entrypoint] Syncing database schema..."

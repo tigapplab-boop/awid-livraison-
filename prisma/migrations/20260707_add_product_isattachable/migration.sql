@@ -1,8 +1,14 @@
--- AlterTable
-ALTER TABLE "products" ADD COLUMN "isAttachable" BOOLEAN NOT NULL DEFAULT false;
+-- AlterTable (idempotent - check if column exists first)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'products' AND column_name = 'isAttachable'
+  ) THEN
+    ALTER TABLE "products" ADD COLUMN "isAttachable" BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+END $$;
 
 -- Update existing supplements and sauces to be attachable
--- Based on category names that typically contain attachable items
 UPDATE "products" 
 SET "isAttachable" = true 
 WHERE "categoryId" IN (
